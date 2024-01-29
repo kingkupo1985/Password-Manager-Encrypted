@@ -9,6 +9,7 @@ import keyring
 import sqlite3
 import bcrypt
 
+user_id = None
 
 # TODO Convert in to OOP app
 # TODO Convert into web/cloud app
@@ -42,25 +43,31 @@ def check_and_create_databases():
     try:
         with sqlite3.connect('password_manager.db') as conn:
             # Prompt the user to create the first user only if the database is empty
-            if not is_database_empty(conn):
+            if not is_not_database_empty(conn):
                 login_prompt()
             else:
                 create_first_user()
     except sqlite3.OperationalError:
-        create_database_tables()
+        messagebox.showinfo(title='⚠️ Notice ⚠️', message='Trying to create Database from check_and_create_database()')
         # Prompt the user to create the first user
         create_first_user()
     # After creating the first user, or if the database is not empty, check for login
 
 # Add a helper function to check if the database is empty
-def is_database_empty(conn):
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM users")
-    count = cursor.fetchone()[0]
-    return count == 0
+def is_not_database_empty(conn):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM users")
+        count = cursor.fetchone()[0]
+        return count == 0
+    except sqlite3.OperationalError as Error:
+        message_s = f'Database Is Not Found!\nFirst Time Running App Please Create User before logging in {Error}'
+        messagebox.showinfo(title='🛑 Notice 🛑', message=message_s)
 
 # ---------------------------- DATABASE USER FUNCTIONS ------------------------------- #
 def create_first_user():
+    global user_id
+    create_database_tables()
     # Get username using a dialog box
     username = askstring("Username", "Create a new username:")
     # Get password using a dialog box
@@ -75,6 +82,7 @@ def create_first_user():
                 cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, hashed_password))
                 conn.commit()
                 messagebox.showinfo(title='Success', message='User registered successfully!')
+                user_id = cursor.lastrowid
                 login_prompt()
                 cursor.execute("SELECT id, password_hash FROM users WHERE username = ?", (username,))
                 result = cursor.fetchone()
@@ -137,14 +145,20 @@ def save_to_db(user_id):
         if ok_to_save:
             key = load_key()
             try:
-                #connect to database
+                # Connect to the database
                 with sqlite3.connect('password_manager.db') as conn:
                     cursor = conn.cursor()
+
                     # Fetch the existing encrypted dictionary
                     existing_data = get_encrypted_dictionary(user_id)
+
                     if existing_data:
                         # Decrypt the existing data
-                        existing_data_decrypted = decrypt(existing_data, key)
+                        try:
+                            existing_data_decrypted = decrypt(existing_data, key)
+                        except Exception as decryption_error:
+                            messagebox.showinfo(title='Warning', message=f"Decryption error: {decryption_error}")
+                            return
 
                         # Update the existing data with new data
                         existing_data_dict = json.loads(existing_data_decrypted)
@@ -155,8 +169,9 @@ def save_to_db(user_id):
                             }
                         }
                         existing_data_dict.update(new_data)
+
                         # Encrypt the updated data
-                        updated_data_encrypted = encrypt(json.dumps(existing_data_dict), key)
+                        updated_data_encrypted = encrypt(json.dumps(existing_data_dict).encode('utf-8'), key)
 
                         # Update the row in the database with the updated encrypted dictionary
                         cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
@@ -166,6 +181,25 @@ def save_to_db(user_id):
                         website_entry.delete(0, 'end')
                         email_user_entry.delete(0, 'end')
                         password_entry.delete(0, 'end')
+                    else:
+                        # If no existing data, create a new entry
+                        new_data = {
+                            website: {
+                                'username': username,
+                                'password': password
+                            }
+                        }
+                        new_data_encrypted = encrypt(json.dumps(new_data).encode('utf-8'), key)
+
+                        # Insert a new row with the encrypted dictionary
+                        cursor.execute("INSERT INTO passwords (user_id, encrypt_dictionary) VALUES (?, ?)",
+                                       (user_id, new_data_encrypted))
+                        conn.commit()
+                        messagebox.showinfo(title='Success!', message='Your New Entry Was Saved!')
+                        website_entry.delete(0, 'end')
+                        email_user_entry.delete(0, 'end')
+                        password_entry.delete(0, 'end')
+
             except sqlite3.Error as error:
                 messagebox.showinfo(title='Warning', message=f"Sorry Some Error Happened: {error}")
 
@@ -218,20 +252,20 @@ def generate_password():
 def update_dropdown(user_id):
     try:
         key = load_key()
-        try:
-            # Does the user exist and have anything stored?
-            existing_data = get_encrypted_dictionary(user_id)
+        existing_data = get_encrypted_dictionary(user_id)
+
+        if existing_data:
             decrypted_data = decrypt(existing_data, key)
-            # Read old data and save to variable
             data = json.loads(decrypted_data)
-        except (FileNotFoundError, json.JSONDecodeError) as error:
-            messagebox.showinfo(title='Warning', message=f"Sorry Some Error Happened: {error}")
-            with open('save_passwords.json.enc', mode='w') as save_file:
-                # create file if not existing
-                data = {}
-    finally:
-        website_list = list(data.keys())
-        website_dropdown['values'] = website_list
+        else:
+            data = {}
+    except (FileNotFoundError, json.JSONDecodeError) as error:
+        messagebox.showinfo(title='Warning', message=f"Sorry Some Error Happened: {error}")
+        with open('save_passwords.json.enc', mode='w') as save_file:
+            data = {}
+
+    website_list = list(data.keys())
+    website_dropdown['values'] = website_list
 
 
 # ---------------------------- Load Old JSON File  ------------------------------- #
@@ -257,28 +291,59 @@ def load_json_db(user_id):
     try:
         with sqlite3.connect('password_manager.db') as conn:
             cursor = conn.cursor()
-            encrypted_data = encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
-            cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
-                           (encrypted_data, user_id))
-            conn.commit()
-            messagebox.showinfo(title='Success!', message=f"Your File Was Loaded and Saved Successfully!")
+
+            # Check if a row with the given user_id already exists
+            cursor.execute("SELECT * FROM passwords WHERE user_id = ?", (user_id,))
+            existing_row = cursor.fetchone()
+
+            if existing_row:
+                # If row exists, update it
+                encrypted_data = encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
+                cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
+                               (encrypted_data, user_id))
+                conn.commit()
+                messagebox.showinfo(title='Success!', message=f"Your File Was Loaded and Updated Successfully!")
+            else:
+                # If no row exists, create the first row
+                encrypted_data = encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
+                cursor.execute("INSERT INTO passwords (user_id, encrypt_dictionary) VALUES (?, ?)",
+                               (user_id, encrypted_data))
+                conn.commit()
+                messagebox.showinfo(title='Success!', message=f"Your File Was Loaded and Saved Successfully!")
+
     except sqlite3.Error as error:
         messagebox.showinfo(title='Warning', message=f"Sorry Some Error Happened: {error}")
-            # create file if not existing
-        data = {}
-        data.update(new_data)
+
     update_dropdown(user_id)
 
 # ---------------------------- Display   ------------------------------- #
+def get_decrypted_dictionary(user_id):
+    key = load_key()
+    try:
+        with sqlite3.connect('password_manager.db') as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT encrypt_dictionary FROM passwords WHERE user_id = ?", (user_id,))
+            encrypted_data = cursor.fetchone()
+            if encrypted_data:
+                decrypted_data = decrypt(encrypted_data[0], key)
+                return json.loads(decrypted_data)
+            else:
+                return {}
+    except sqlite3.Error as error:
+        # Handle the error appropriately (e.g., show a messagebox)
+        return {}
+
 def display_selected_website(*args):
     selected_website = website_dropdown.get()
     try:
-        data =  get_encrypted_dictionary(user_id)
+        data = get_decrypted_dictionary(user_id)
     except sqlite3.Error as error:
         data = {}
+        # Handle the error appropriately (e.g., show a messagebox)
+
     if selected_website:
-        email = data[selected_website]['username']
-        password = data[selected_website]['password']
+        email = data.get(selected_website, {}).get('username', 'N/A')
+        password = data.get(selected_website, {}).get('password', 'N/A')
         messagebox.showinfo(title=f'Login Information for: {selected_website}', message=f'Username: {email}\nPassword: {password}')
 
 
@@ -317,13 +382,13 @@ def decrypt(encrypted_data, key):
 
 # ---------------------------- GUI Logic & Setup ------------------------------- #
 def login_prompt():
+    global user_id
     def on_login():
+        global user_id
         username = username_entry.get()
         password = password_entry.get()
-
         # Verify user credentials
         user_id = get_user_id(username, password)
-
         if user_id is not None:
             messagebox.showinfo("Login Successful", f"Welcome, {username}, Your User ID:{user_id}!")
             login_window.destroy()
@@ -357,7 +422,6 @@ def login_prompt():
     # Run the login window
     login_window.mainloop()
 
-user_id = 1
 # Cerating UI window
 window = Tk()
 window.title("Password Manager")
