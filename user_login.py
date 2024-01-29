@@ -5,9 +5,9 @@ from database_handler import DatabaseHandler
 from MainWindow import MainWindow
 
 class UserLogin:
-    def __init__(self, db_handler):
-        self.db_handler = db.handler
-        self.user_id = None
+    def __init__(self, db_handler, user_id):
+        self.db_handler = db_handler
+        self.user_id = user_id
 
     def on_login(self):
         username = self.username_entry.get()

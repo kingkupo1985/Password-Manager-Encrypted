@@ -1,10 +1,9 @@
-from tkinter import *
-from userlogin import UserLogin
-from mainwindow import MainWindow
+from user_login import UserLogin
+from MainWindow import MainWindow
 from database_handler import DatabaseHandler
 
 class UserManager:
-    def __init__(self):
+    def __init__(self, db_handler, user_id):
         self.db_handler = DatabaseHandler()
         self.current_user_id = None
 
