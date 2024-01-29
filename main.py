@@ -10,11 +10,10 @@ import sqlite3
 import bcrypt
 
 user_id = None
-
+login_window = None
 # TODO Convert in to OOP app
 # TODO Convert into web/cloud app
-# TODO Fix Functions, (Only Load JSON, Login, and Create Database functions work,
-#  all other functions need to be converted from JSON to SQL DB
+# TODO Fix Load JSON, and App Thinks everytime it's ran is the first time even with users created
 # ---------------------------- CREATE DATABASE TABLES ------------------------------- #
 def create_database_tables():
     with sqlite3.connect('password_manager.db') as conn:
@@ -42,16 +41,19 @@ def create_database_tables():
 def check_and_create_databases():
     try:
         with sqlite3.connect('password_manager.db') as conn:
-            # Prompt the user to create the first user only if the database is empty
-            if not is_not_database_empty(conn):
+            # Check if any users exist in the database
+            if is_not_database_empty(conn):
+                # If users exist, proceed to the login prompt
                 login_prompt()
             else:
-                create_first_user()
+                # If no users exist, prompt the user to create the first user
+                messagebox.showinfo(title='⚠️ Notice ⚠️', message='First time running the app. You need to create a user.')
+                create_user()
     except sqlite3.OperationalError:
+        # If an error occurs, prompt the user to create the first user
         messagebox.showinfo(title='⚠️ Notice ⚠️', message='Trying to create Database from check_and_create_database()')
-        # Prompt the user to create the first user
-        create_first_user()
-    # After creating the first user, or if the database is not empty, check for login
+        create_user()
+
 
 # Add a helper function to check if the database is empty
 def is_not_database_empty(conn):
@@ -59,13 +61,12 @@ def is_not_database_empty(conn):
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM users")
         count = cursor.fetchone()[0]
-        return count == 0
+        return count > 0  # Return True if there are users in the database
     except sqlite3.OperationalError as Error:
-        message_s = f'Database Is Not Found!\nFirst Time Running App Please Create User before logging in {Error}'
-        messagebox.showinfo(title='🛑 Notice 🛑', message=message_s)
+        return False
 
 # ---------------------------- DATABASE USER FUNCTIONS ------------------------------- #
-def create_first_user():
+def create_user():
     global user_id
     create_database_tables()
     # Get username using a dialog box
@@ -270,12 +271,12 @@ def update_dropdown(user_id):
 
 # ---------------------------- Load Old JSON File  ------------------------------- #
 def load_json_db(user_id):
-    file_path = filedialog.askopenfilename(defaultextension=".json", filetypes=[("JSON Files", "*.json")])
-
-    if not file_path:
-        return
-
     try:
+        file_path = filedialog.askopenfilename(defaultextension=".json", filetypes=[("JSON Files", "*.json")])
+
+        if not file_path:
+            return
+
         with open(file_path, mode='r') as json_file:
             new_data = json.load(json_file)
 
@@ -283,38 +284,38 @@ def load_json_db(user_id):
         json_string = json.dumps(new_data)
         new_data_bytes = json_string.encode('utf-8')
 
-    except (FileNotFoundError, json.JSONDecodeError):
-        messagebox.showerror(title='Error', message='Failed to load JSON file.')
-        return
+        key = load_key()
+        try:
+            with sqlite3.connect('password_manager.db') as conn:
+                cursor = conn.cursor()
 
-    key = load_key()
-    try:
-        with sqlite3.connect('password_manager.db') as conn:
-            cursor = conn.cursor()
+                # Check if a row with the given user_id already exists
+                cursor.execute("SELECT * FROM passwords WHERE user_id = ?", (user_id,))
+                existing_row = cursor.fetchone()
 
-            # Check if a row with the given user_id already exists
-            cursor.execute("SELECT * FROM passwords WHERE user_id = ?", (user_id,))
-            existing_row = cursor.fetchone()
+                if existing_row:
+                    # If row exists, update it
+                    encrypted_data = encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
+                    cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
+                                   (encrypted_data, user_id))
+                    conn.commit()
+                    messagebox.showinfo(title='Success!', message=f"Your File Was Loaded and Updated Successfully!")
+                else:
+                    # If no row exists, create the first row
+                    encrypted_data = encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
+                    cursor.execute("INSERT INTO passwords (user_id, encrypt_dictionary) VALUES (?, ?)",
+                                   (user_id, encrypted_data))
+                    conn.commit()
+                    messagebox.showinfo(title='Success!', message=f"Your File Was Loaded and Saved Successfully!")
 
-            if existing_row:
-                # If row exists, update it
-                encrypted_data = encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
-                cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
-                               (encrypted_data, user_id))
-                conn.commit()
-                messagebox.showinfo(title='Success!', message=f"Your File Was Loaded and Updated Successfully!")
-            else:
-                # If no row exists, create the first row
-                encrypted_data = encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
-                cursor.execute("INSERT INTO passwords (user_id, encrypt_dictionary) VALUES (?, ?)",
-                               (user_id, encrypted_data))
-                conn.commit()
-                messagebox.showinfo(title='Success!', message=f"Your File Was Loaded and Saved Successfully!")
+        except sqlite3.Error as error:
+            messagebox.showinfo(title='Warning', message=f"SQLite Error: {error}")
 
-    except sqlite3.Error as error:
-        messagebox.showinfo(title='Warning', message=f"Sorry Some Error Happened: {error}")
+        update_dropdown(user_id)
 
-    update_dropdown(user_id)
+    except Exception as e:
+        messagebox.showinfo(title='Warning', message=f"Error loading JSON file: {e}")
+
 
 # ---------------------------- Display   ------------------------------- #
 def get_decrypted_dictionary(user_id):
@@ -378,13 +379,13 @@ def decrypt(encrypted_data, key):
     return decrypted_data
 
 
-# ---------------------------- UI FUNCTIONS SETUP ------------------------------- #
-
 # ---------------------------- GUI Logic & Setup ------------------------------- #
 def login_prompt():
     global user_id
+    global login_window
     def on_login():
         global user_id
+        global login_window
         username = username_entry.get()
         password = password_entry.get()
         # Verify user credentials
@@ -392,6 +393,7 @@ def login_prompt():
         if user_id is not None:
             messagebox.showinfo("Login Successful", f"Welcome, {username}, Your User ID:{user_id}!")
             login_window.destroy()
+            create_main_window()
             return True
         else:
             messagebox.showerror("Login Failed", "Invalid username or password")
@@ -416,63 +418,69 @@ def login_prompt():
     login_button.pack(pady=10)
 
     # Create User
-    login_button = Button(login_window, text="Create User", command=create_first_user)
+    login_button = Button(login_window, text="Create User", command=create_user)
     login_button.pack(pady=10)
 
     # Run the login window
     login_window.mainloop()
 
-# Cerating UI window
-window = Tk()
-window.title("Password Manager")
-window.config(padx=50, pady=50, bg='white')
-# create logo  on screen
-canvas = Canvas(width=200, height=200, bg='white', highlightthickness=0)
-lock_img = PhotoImage(file='logo.png')
-canvas.create_image(100, 100, image=lock_img)
-canvas.grid(row=0, column=1)
-# creating website label and entry field
-website_label = Label(text='Website:', bg='white', fg='black', highlightthickness=0)
-website_entry = Entry(width=21, bg='white', highlightthickness=0, fg='black', insertbackground='black')
-website_button = Button(text='Search', width=10, fg='black', highlightthickness=0,
-                        highlightbackground='white',
-                        font=('Helvatical bold', 14), command=lambda: find_password_db(user_id))
-website_label.grid(row=2, column=0)
-website_entry.grid(row=2, column=1)
-website_button.grid(row=2, column=2)
-# Add Drop down for website function:
-website_dropdown_label = Label(text='Select Website:', bg='white', fg='black', highlightthickness=0)
-website_dropdown = ttk.Combobox(width=18, state="readonly", postcommand=lambda: update_dropdown(user_id))
-website_dropdown_label.grid(row=1, column=0)
-website_dropdown.grid(row=1, column=1, columnspan=2)
-website_dropdown.bind("<<ComboboxSelected>>", display_selected_website)
-# setting dropdown styling
-style = ttk.Style()
-style.theme_use('clam')
-style.configure("TCombobox", fieldbackground="orange", background="white")
-# creating email label and entry field
-email_user_label = Label(text='Email/Username', bg='white', fg='black')
-email_user_entry = Entry(width=35, bg='white', fg='black', highlightthickness=0, insertbackground='black')
-email_user_label.grid(row=3, column=0)
-email_user_entry.grid(row=3, column=1, columnspan=2)
-# creating password label, entry field, and button
-password_label = Label(text='Password', bg='white', fg='black')
-password_entry = Entry(width=21, bg='white', fg='black', highlightthickness=0, insertbackground='black')
-generate_password_button = Button(text="Generate password", width=13, command=generate_password, fg='black',
-                                  highlightbackground='white', font=('Helvatical bold', 10))
-password_label.grid(row=4, column=0)
-password_entry.grid(row=4, column=1)
-generate_password_button.grid(row=4, column=2)
-# creating add button to save the password
-add_to_data_button = Button(text="Add", foreground='black', width=42, command=lambda: save_to_db(user_id),
+def create_main_window():
+    global lock_img
+    global website_entry
+    global website_dropdown
+    global email_user_entry
+    global password_entry
+    # Cerating UI window
+    window = Tk()
+    window.title("Password Manager")
+    window.config(padx=50, pady=50, bg='white')
+    # create logo  on screen
+    canvas = Canvas(width=200, height=200, bg='white', highlightthickness=0)
+    lock_img = PhotoImage(file='logo.png')
+    canvas.create_image(100, 100, image=lock_img)
+    canvas.grid(row=0, column=1)
+    # Add Drop down for website function:
+    website_dropdown_label = Label(text='Select Website:', bg='white', fg='black', highlightthickness=0)
+    website_dropdown = ttk.Combobox(width=18, state="readonly", postcommand=lambda: update_dropdown(user_id))
+    website_dropdown_label.grid(row=1, column=0)
+    website_dropdown.grid(row=1, column=1, columnspan=2)
+    website_dropdown.bind("<<ComboboxSelected>>", display_selected_website)
+    # setting dropdown styling
+    style = ttk.Style()
+    style.theme_use('clam')
+    style.configure("TCombobox", fieldbackground="orange", background="white")
+    # creating website label and entry field
+    website_label = Label(text='Website:', bg='white', fg='black', highlightthickness=0)
+    website_entry = Entry(width=21, bg='white', highlightthickness=0, fg='black', insertbackground='black')
+    website_button = Button(text='Search', width=10, fg='black', highlightthickness=0,
                             highlightbackground='white',
-                            font=('Helvatical bold', 10,))
-add_to_data_button.grid(row=5, column=1, columnspan=2)
-# creating load button to load a JSON file
-load_button = Button(text="Load JSON", foreground='black', width=42, command=lambda: load_json_db(user_id),
-                     highlightbackground='white',
-                     font=('Helvetica bold', 10))
-load_button.grid(row=6, column=1, columnspan=2)
-# let's run the app check if this is the first time or not
+                            font=('Helvatical bold', 14), command=lambda: find_password_db(user_id))
+    website_label.grid(row=2, column=0)
+    website_entry.grid(row=2, column=1)
+    website_button.grid(row=2, column=2)
+    # creating email label and entry field
+    email_user_label = Label(text='Email/Username', bg='white', fg='black')
+    email_user_entry = Entry(width=35, bg='white', fg='black', highlightthickness=0, insertbackground='black')
+    email_user_label.grid(row=3, column=0)
+    email_user_entry.grid(row=3, column=1, columnspan=2)
+    # creating password label, entry field, and button
+    password_label = Label(text='Password', bg='white', fg='black')
+    password_entry = Entry(width=21, bg='white', fg='black', highlightthickness=0, insertbackground='black')
+    generate_password_button = Button(text="Generate password", width=13, command=generate_password, fg='black',
+                                      highlightbackground='white', font=('Helvatical bold', 10))
+    password_label.grid(row=4, column=0)
+    password_entry.grid(row=4, column=1)
+    generate_password_button.grid(row=4, column=2)
+    # creating add button to save the password
+    add_to_data_button = Button(text="Add", foreground='black', width=42, command=lambda: save_to_db(user_id),
+                                highlightbackground='white',
+                                font=('Helvatical bold', 10,))
+    add_to_data_button.grid(row=5, column=1, columnspan=2)
+    # creating load button to load a JSON file
+    load_button = Button(text="Load JSON", foreground='black', width=42, command=lambda: load_json_db(user_id),
+                         highlightbackground='white',
+                         font=('Helvetica bold', 10))
+    load_button.grid(row=6, column=1, columnspan=2)
 
+# let's run the app check if this is the first time or not
 check_and_create_databases()
