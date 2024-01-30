@@ -1,3 +1,4 @@
 .DS_Store
 .idea/
 save_passwords.json.enc
+password_manager.db
