@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import messagebox, ttk, filedialog
+from tkinter import Toplevel, Label, Button, Tk, W, E
 from tkinter.simpledialog import askstring
 from random import shuffle, randint, choice
 import pyperclip
@@ -49,24 +50,13 @@ def check_and_create_databases():
     except sqlite3.OperationalError as e:
         # Handle the case where the tables or database do not exist
         create_database_tables()
-        messagebox.showinfo(title='	Notice ', message='First Time\nRunning Password Manager.\nPlease Create a User')
+        # Let user know this isthe first time running the app and create a user
+        custom_showinfo(title='⚠️ Notice ⚠️', message='First Time\nRunning Password Manager.\nPlease Create a User')
         # Prompt the user to create the first user
         create_first_user()
     except Exception as e:
         # Handle other exceptions that might occur
-        messagebox.showinfo(title='🛑 Error 🛑', message=f'An error occurred: {e}')
-
-# Add a helper function to check if the database is empty outdateed
-# def is_not_database_empty(conn):
-#     try:
-#         cursor = conn.cursor()
-#         cursor.execute("SELECT COUNT(*) FROM users")
-#         count = cursor.fetchone()[0]
-#         return count == 0
-#     except sqlite3.OperationalError as Error:
-#         message_s = f'Database Is Not Found!\nFirst Time Running App Please Create User before logging in {Error}'
-#         create_first_user()
-#         messagebox.showinfo(title='🛑 Notice 🛑', message=message_s)
+        custom_showinfo(title='🛑 Error 🛑', message=f'An error occurred: {e}')
 
 # ---------------------------- DATABASE USER FUNCTIONS ------------------------------- #
 def create_first_user():
@@ -97,7 +87,7 @@ def create_first_user():
                 try:
                     cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, hashed_password))
                     conn.commit()
-                    messagebox.showinfo(title='✅ Success ✅', message='User registered successfully!')
+                    custom_showinfo(title='✅ Success ✅', message='User registered successfully!')
                     user_id = cursor.lastrowid
                     login_prompt()
                     cursor.execute("SELECT id, password_hash FROM users WHERE username = ?", (username,))
@@ -110,9 +100,9 @@ def create_first_user():
                             # Password is correct, return the user_id
                             return user_id
                 except sqlite3.IntegrityError:
-                    messagebox.showinfo(title='⚠️ Notice ⚠️', message='Username already exists!')
+                    custom_showinfo(title='⚠️ Notice ⚠️', message='Username already exists!')
         else:
-            messagebox.showinfo(title='⚠️ Notice ⚠️', message='Passwords did not match. Please try again.')
+            custom_showinfo(title='⚠️ Notice ⚠️', message='Passwords did not match. Please try again.')
 # Verify user exists in database ad return user ID
 def get_user_id(username, password):
     with sqlite3.connect('password_manager.db') as conn:
@@ -146,7 +136,7 @@ def save_to_db(user_id):
     username = email_user_entry.get()
     password = password_entry.get()
     if len(website) == 0 or len(username) == 0 or len(password) == 0:
-        messagebox.showinfo(title='⚠️ Notice ⚠️', message='Please do not leave any fields blank!')
+        custom_showinfo(title='⚠️ Notice ⚠️', message='Please do not leave any fields blank!')
     else:
         ok_to_save = messagebox.askokcancel(title=website, message=f"These are the details you'd like to save"
                                                                    f"\nUsername: {username}\nPassword: {password}")
@@ -167,7 +157,7 @@ def save_to_db(user_id):
                         try:
                             existing_data_decrypted = decrypt(existing_data, key)
                         except Exception as decryption_error:
-                            messagebox.showinfo(title='🛑 Warning 🛑', message=f"Decryption error: {decryption_error}")
+                            custom_showinfo(title='🛑 Warning 🛑', message=f"Decryption error: {decryption_error}")
                             return
 
                         # Update the existing data with new data
@@ -188,7 +178,7 @@ def save_to_db(user_id):
                         cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
                                        (updated_data_encrypted, user_id))
                         conn.commit()
-                        messagebox.showinfo(title='✅ Success! ✅', message='Your New Entry Was Saved!')
+                        custom_showinfo(title='✅ Success! ✅', message='Your New Entry Was Saved!')
                         website_entry.delete(0, 'end')
                         email_user_entry.delete(0, 'end')
                         password_entry.delete(0, 'end')
@@ -206,13 +196,13 @@ def save_to_db(user_id):
                         cursor.execute("INSERT INTO passwords (user_id, encrypt_dictionary) VALUES (?, ?)",
                                        (user_id, new_data_encrypted))
                         conn.commit()
-                        messagebox.showinfo(title='✅ Success! ✅', message='Your New Entry Was Saved!')
+                        custom_showinfo(title='✅ Success! ✅', message='Your New Entry Was Saved!')
                         website_entry.delete(0, 'end')
                         email_user_entry.delete(0, 'end')
                         password_entry.delete(0, 'end')
 
             except sqlite3.Error as error:
-                messagebox.showinfo(title='🛑 Warning🛑', message=f"Sorry Some Error Happened: {error}")
+                custom_showinfo(title='🛑 Warning🛑', message=f"Sorry Some Error Happened: {error}")
 
 #  Find your login based on search query
 def find_password_db(user_id):
@@ -233,7 +223,7 @@ def find_password_db(user_id):
             # If no data exists, set data to an empty dictionary
             data = {}
     except (FileNotFoundError, json.JSONDecodeError) as error:
-        messagebox.showinfo(title='🛑 Warning 🛑', message=f"Sorry Some Error Happened: {error}")
+        custom_showinfo(title='Warning', message=f"Sorry Some Error Happened: {error}")
         # Set data to an empty dictionary
         data = {}
 
@@ -241,10 +231,10 @@ def find_password_db(user_id):
     if website in data:
         email = data[website]['username']
         password = data[website]['password']
-        messagebox.showinfo(title=f'Login Information for: {website}',
-                            message=f'Username: {email}\nPassword: {password}')
+        custom_showinfo(title=f'Login',
+                            message=f'Website:{website}\nUsername: {email}\nPassword: {password}')
     else:
-        messagebox.showinfo(title=f'⚠️ Website Not Found ⚠️', message=f'Sorry, No Entry Found')
+        custom_showinfo(title=f'⚠️ Website Not Found ⚠️', message=f'Sorry, No Entry Found')
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 def generate_password():
@@ -276,7 +266,7 @@ def update_dropdown(user_id):
             else:
                 data = {}
         except (FileNotFoundError, json.JSONDecodeError) as error:
-            messagebox.showinfo(title='Warning', message=f"Sorry Some Error Happened: {error}")
+            custom_showinfo(title='Warning', message=f"Sorry Some Error Happened: {error}")
             with open('save_passwords.json.enc', mode='w') as save_file:
                 # create file if not existing
                 data = {}
@@ -284,7 +274,7 @@ def update_dropdown(user_id):
             website_list = list(data.keys())
             website_dropdown['values'] = website_list
     except (FileNotFoundError, json.JSONDecodeError) as error:
-        messagebox.showinfo(title='🛑 Warning 🛑', message=f"Sorry Some Error Happened: {error}")
+        custom_showinfo(title='🛑 Warning 🛑', message=f"Sorry Some Error Happened: {error}")
         with open('save_passwords.json.enc', mode='w') as save_file:
             data = {}
 
@@ -303,7 +293,7 @@ def load_json_db(user_id):
         json_string = json.dumps(new_data)
         new_data_bytes = json_string.encode('utf-8')
     except (FileNotFoundError, json.JSONDecodeError):
-        messagebox.showinfo(title='🛑 Error 🛑', message='Failed to load JSON file.')
+        custom_showinfo(title='🛑 Error 🛑', message='Failed to load JSON file.')
         return
     key = load_key()
     try:
@@ -323,17 +313,17 @@ def load_json_db(user_id):
                 cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
                                (encrypted_data, user_id))
                 conn.commit()
-                messagebox.showinfo(title='✅ Success! ✅', message=f"Your File Was Loaded and Updated Successfully!")
+                custom_showinfo(title='✅ Success! ✅', message=f"Your File Was Loaded and Updated Successfully!")
             else:
                 # If no row exists, create the first row
                 encrypted_data = encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
                 cursor.execute("INSERT INTO passwords (user_id, encrypt_dictionary) VALUES (?, ?)",
                                (user_id, encrypted_data))
                 conn.commit()
-                messagebox.showinfo(title='✅ Success! ✅', message=f"Your File Was Loaded and Saved Successfully!")
+                custom_showinfo(title='✅ Success! ✅', message=f"Your File Was Loaded and Saved Successfully!")
 
     except sqlite3.Error as error:
-        messagebox.showinfo(title='🛑 Error 🛑', message=f"Sorry Some Error Happened: {error}")
+        custom_showinfo(title='🛑 Error 🛑', message=f"Sorry Some Error Happened: {error}")
         # create file if not existing
         data = {}
         data.update(new_data)
@@ -368,7 +358,7 @@ def display_selected_website(*args):
     if selected_website:
         email = data.get(selected_website, {}).get('username', 'N/A')
         password = data.get(selected_website, {}).get('password', 'N/A')
-        messagebox.showinfo(title=f'Login Information for: {selected_website}', message=f'Username: {email}\nPassword: {password}')
+        custom_showinfo(title=f'Login Information for: {selected_website}', message=f'Username: {email}\nPassword: {password}')
 
 
 # ---------------------------- Data Encryption ------------------------------- #
@@ -419,11 +409,11 @@ def login_prompt():
         user_id = get_user_id(username, password)
 
         if user_id is not None:
-            messagebox.showinfo(title="✅ Login Successful ✅", message=f"Welcome, {username}, Your User ID:{user_id}!")
+            custom_showinfo(title="✅Login Successful✅", message=f"Welcome, {username}, Your User ID:{user_id}!")
             login_window.destroy()
             return True
         else:
-            messagebox.showinfo(title="🛑 Login Failed 🛑", message="Invalid username or password")
+            custom_showinfo(title="🛑Login Failed🛑", message="Invalid username or password")
             return False
     # Create login window
     login_window = Tk()
@@ -448,6 +438,37 @@ def login_prompt():
     login_button.pack(pady=10)
     # Run the login window
     login_window.mainloop()
+
+# ---------------------------- GUI Center TopLevel Window ------------------------------- #
+def custom_showinfo(title, message):
+    top = Toplevel(window)
+    top.title(title)
+
+    top.lift()
+    # Set the width and height of the toplevel window
+    top_width = 300
+    top_height = 100
+
+    # Calculate the x and y coordinates to center the toplevel window
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+
+    x_position = (screen_width - top_width) // 2
+    y_position = (screen_height - top_height) // 2
+
+    top.geometry(f"{top_width}x{top_height}+{x_position}+{y_position}")
+
+    # Create a frame to hold the label and button
+    frame = Frame(top)
+    frame.pack(expand=True)
+
+    # Create and center the label
+    label = Label(frame, text=message)
+    label.pack(pady=(10, 0))  # Add padding only at the top
+
+    # Create and center the button
+    ok_button = Button(frame, text="OK", command=top.destroy)
+    ok_button.pack(pady=(10, 0))  # Add padding only at the top
 
 # ---------------------------- GUI Main Window ------------------------------- #
 
@@ -508,3 +529,4 @@ load_button = Button(text="Load JSON", foreground='black', width=42, command=lam
 load_button.grid(row=6, column=1, columnspan=2)
 # let's run the app check if this is the first time or not
 check_and_create_databases()
+window.mainloop()
