@@ -1,9 +1,9 @@
 from user_login import UserLogin
 from MainWindow import MainWindow
-from database_handler import DatabaseHandler
+from DatabaseUserHandler import DatabaseHandler
 
 class UserManager:
-    def __init__(self, db_handler, user_id):
+    def __init__(self):
         self.db_handler = DatabaseHandler()
         self.current_user_id = None
 

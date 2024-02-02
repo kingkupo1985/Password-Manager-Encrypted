@@ -54,8 +54,8 @@ class MainWindow:
         print(f"Your password is: {password}")
 
     def find_password(self):
-        website = website_entry.get()
-        key = load_key()
+        website = self.website_entry.get()
+        key = EncryptionManager.load_or_generate_key()
         try:
             with open('save_passwords.json.enc', mode='rb') as save_file:
                 # Decrypt the file

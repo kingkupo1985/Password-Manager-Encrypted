@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter import messagebox, ttk, filedialog
-from tkinter import Toplevel, Label, Button, Tk, W, E
+from tkinter import Toplevel, Label, Button, Tk
 from tkinter.simpledialog import askstring
 from random import shuffle, randint, choice
 import pyperclip
@@ -58,7 +58,7 @@ def check_and_create_databases():
         # Handle other exceptions that might occur
         custom_showinfo(title='🛑 Error 🛑', message=f'An error occurred: {e}')
 
-# ---------------------------- DATABASE USER FUNCTIONS ------------------------------- #
+# ---------------------------- START DATABASE USER FUNCTIONS ------------------------------- #
 def create_first_user():
     global user_id
 
@@ -123,14 +123,17 @@ def hash_password(password):
     # Hash the password using bcrypt
     hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
     return hashed.decode('utf-8')
-# ---------------------------- DATABASE DATA FUNCTIONS ------------------------------- #
+
+# ---------------------------- END DATABASE USER FUNCTIONS ------------------------------- #
+
+# ---------------------------- START DATABASE DATA FUNCTIONS ------------------------------- #
 def get_encrypted_dictionary(user_id):
     with sqlite3.connect('password_manager.db') as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT encrypt_dictionary FROM passwords WHERE user_id = ?", (user_id,))
         result = cursor.fetchone()
     return result[0] if result else None
-#Save data to database
+#Save data to database has GUI controls
 def save_to_db(user_id):
     website = website_entry.get().lower()
     username = email_user_entry.get()
@@ -204,7 +207,6 @@ def save_to_db(user_id):
             except sqlite3.Error as error:
                 custom_showinfo(title='🛑 Warning🛑', message=f"Sorry Some Error Happened: {error}")
 
-#  Find your login based on search query
 def find_password_db(user_id):
     # Let's find a website and its logins
     website = website_entry.get()
@@ -236,22 +238,7 @@ def find_password_db(user_id):
     else:
         custom_showinfo(title=f'⚠️ Website Not Found ⚠️', message=f'Sorry, No Entry Found')
 
-# ---------------------------- PASSWORD GENERATOR ------------------------------- #
-def generate_password():
-    letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
-    numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-    symbols = ['!', '#', '$', '%', '&', '(', ')', '*', '+']
-    password_list = []
-    password_list = [choice(letters) for _ in range(randint(8, 10))]
-    password_list += [choice(symbols) for _ in range(randint(2, 4))]
-    password_list += [choice(numbers) for _ in range(randint(2, 4))]
-    shuffle(password_list)
-    password = ''.join(password_list)
-    password_entry.delete(0, END)
-    password_entry.insert(0, string=f"{password}")
-    pyperclip.copy(f"{password}")
-    print(f"Your password is: {password}")
-# ---------------------------- Load Drop Down Website Options (Will need DB Access) ------------------------------- #
+# --- Drop Down Data Function Database --- #
 def update_dropdown(user_id):
     try:
         key = load_key()
@@ -281,7 +268,8 @@ def update_dropdown(user_id):
     website_list = list(data.keys())
     website_dropdown['values'] = website_list
 
-# ---------------------------- Load Old JSON File to Database ------------------------------- #
+
+# --- Load Old JSON File to Database --- #
 def load_json_db(user_id):
     file_path = filedialog.askopenfilename(defaultextension=".json", filetypes=[("JSON Files", "*.json")])
     if not file_path:
@@ -330,7 +318,6 @@ def load_json_db(user_id):
 
     update_dropdown(user_id)
 
-# ---------------------------- Display   ------------------------------- #
 def get_decrypted_dictionary(user_id):
     key = load_key()
     try:
@@ -347,21 +334,10 @@ def get_decrypted_dictionary(user_id):
         # Handle the error appropriately (e.g., show a messagebox)
         return {}
 
-def display_selected_website(*args):
-    selected_website = website_dropdown.get()
-    try:
-        data = get_decrypted_dictionary(user_id)
-    except sqlite3.Error as error:
-        data = {}
-        # Handle the error appropriately (e.g., show a messagebox)
-
-    if selected_website:
-        email = data.get(selected_website, {}).get('username', 'N/A')
-        password = data.get(selected_website, {}).get('password', 'N/A')
-        custom_showinfo(title=f'Login Information for: {selected_website}', message=f'Username: {email}\nPassword: {password}')
+# ---------------------------- END DATABASE DATA FUNCTIONS ------------------------------- #
 
 
-# ---------------------------- Data Encryption ------------------------------- #
+# ---------------------------- START Data Encryption ------------------------------- #
 def generate_key():
     # Generate a key
     key = Fernet.generate_key()
@@ -387,7 +363,45 @@ def decrypt(encrypted_data, key):
     decrypted_data = f.decrypt(encrypted_data).decode()
     return decrypted_data
 
-# ---------------------------- GUI Center Function ------------------------------- #
+# ---------------------------- END Data Encryption ------------------------------- #
+
+# ---------------------------- START PASSWORD GENERATOR ------------------------------- #
+def generate_password():
+    letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+    numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+    symbols = ['!', '#', '$', '%', '&', '(', ')', '*', '+']
+    password_list = []
+    password_list = [choice(letters) for _ in range(randint(8, 10))]
+    password_list += [choice(symbols) for _ in range(randint(2, 4))]
+    password_list += [choice(numbers) for _ in range(randint(2, 4))]
+    shuffle(password_list)
+    password = ''.join(password_list)
+    password_entry.delete(0, END)
+    password_entry.insert(0, string=f"{password}")
+    pyperclip.copy(f"{password}")
+    print(f"Your password is: {password}")
+
+# ---------------------------- END PASSWORD GENERATOR ------------------------------- #
+
+
+
+# ---------------------------- START GUI ------------------------------- #
+
+#drop down displayer GUI Class
+def display_selected_website(*args): #GUI Class
+    selected_website = website_dropdown.get()
+    try:
+        data = get_decrypted_dictionary(user_id)
+    except sqlite3.Error as error:
+        data = {}
+        # Handle the error appropriately (e.g., show a messagebox)
+
+    if selected_website:
+        email = data.get(selected_website, {}).get('username', 'N/A')
+        password = data.get(selected_website, {}).get('password', 'N/A')
+        custom_showinfo(title=f'Login Information for: {selected_website}', message=f'Username: {email}\nPassword: {password}')
+
+# ---------------------------- GUI Main Window Center Function ------------------------------- #
 def center_window(window, width, height):
     screen_width = window.winfo_screenwidth()
     screen_height = window.winfo_screenheight()
@@ -397,7 +411,7 @@ def center_window(window, width, height):
 
     window.geometry(f"{width}x{height}+{x_position}+{y_position}")
 
-# ---------------------------- GUI Login ------------------------------- #
+#---GUI Login ---#
 def login_prompt():
     global user_id
     def on_login():
@@ -439,7 +453,7 @@ def login_prompt():
     # Run the login window
     login_window.mainloop()
 
-# ---------------------------- GUI Center TopLevel Window ------------------------------- #
+# --- GUI Center TopLevel Window --- #
 def custom_showinfo(title, message):
     top = Toplevel(window)
     top.title(title)
@@ -470,9 +484,8 @@ def custom_showinfo(title, message):
     ok_button = Button(frame, text="OK", command=top.destroy)
     ok_button.pack(pady=(10, 0))  # Add padding only at the top
 
-# ---------------------------- GUI Main Window ------------------------------- #
+# --- GUI Main Window --- #
 
-print(f"User Id in main_window(): {user_id}")
 # Cerating UI window
 window = Tk()
 window.title("Password Manager")
@@ -527,6 +540,4 @@ load_button = Button(text="Load JSON", foreground='black', width=42, command=lam
                      highlightbackground='white',
                      font=('Helvetica bold', 10))
 load_button.grid(row=6, column=1, columnspan=2)
-# let's run the app check if this is the first time or not
 check_and_create_databases()
-window.mainloop()

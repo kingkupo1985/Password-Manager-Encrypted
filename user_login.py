@@ -1,7 +1,6 @@
 from tkinter import *
 from tkinter.simpledialog import askstring
 from tkinter import messagebox
-from database_handler import DatabaseHandler
 from MainWindow import MainWindow
 
 class UserLogin:

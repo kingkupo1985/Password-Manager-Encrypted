@@ -1,5 +1,5 @@
 import os
-from database_handler import DatabaseHandler
+from DatabaseUserHandler import DatabaseHandler
 from EncryptionManager import EncryptionManager
 from user_login import UserLogin
 from MainWindow import MainWindow
