@@ -1,10 +1,13 @@
+import json
 from tkinter import *
 from tkinter import messagebox, ttk
 from random import shuffle, randint, choice
 from EncryptionManager import EncryptionManager
+from CustomGUIFunctions import CommonFunctions
 
-class MainWindow:
+class MainWindow(CommonFunctions):
     def __init__(self, db_handler, user_id):
+        super().__init__()
         self.db_handler = db_handler
         self.lock_img = None
         self.website_entry = None
@@ -27,7 +30,7 @@ class MainWindow:
         if selected_website:
             email = data.get(selected_website, {}).get('username', 'N/A')
             password = data.get(selected_website, {}).get('password', 'N/A')
-            messagebox.showinfo(title=f'Login Information for: {selected_website}', message=f'Username: {email}\nPassword: {password}')
+            self.custom_showinfo(title=f'Login Information for: {selected_website}', message=f'Username: {email}\nPassword: {password}')
 
     def generate_password(self):
         letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
@@ -55,12 +58,12 @@ class MainWindow:
 
     def find_password(self):
         website = self.website_entry.get()
-        key = EncryptionManager.load_or_generate_key()
+        key = EncryptionManager.load_key()
         try:
             with open('save_passwords.json.enc', mode='rb') as save_file:
                 # Decrypt the file
                 encrypted_data = save_file.read()
-                decrypted_data = decrypt(encrypted_data, key)
+                decrypted_data = EncryptionManager.decrypt(encrypted_data, key)
                 # Read old data and save to variable
                 data = json.loads(decrypted_data)
         except (FileNotFoundError, json.JSONDecodeError):
@@ -71,10 +74,10 @@ class MainWindow:
             if website in data:
                 email = data[website]['username']
                 password = data[website]['password']
-                messagebox.showinfo(title=f'Login Information for: {website}',
+                self.custom_showinfo(title=f'Login Information for: {website}',
                                     message=f'Username:{email}\n Password:{password}')
             else:
-                messagebox.showinfo(title=f'Website Not Found',
+                self.custom_showinfo(title=f'Website Not Found',
                                     message=f'Sorry, No Entry Found')
 
     def create_main_window(self):
@@ -101,7 +104,8 @@ class MainWindow:
         self.website_entry = Entry(width=21, bg='white', highlightthickness=0, fg='black', insertbackground='black')
         website_button = Button(text='Search', width=10, fg='black', highlightthickness=0,
                                 highlightbackground='white',
-                                font=('Helvatical bold', 14), command=lambda: self.find_password_db(self.user_id))
+                                font=('Helvatical bold', 14),
+                                command=lambda: self.db_handler.find_password_db(self.user_id, self.website_entry))
         website_label.grid(row=2, column=0)
         self.website_entry.grid(row=2, column=1)
         website_button.grid(row=2, column=2)
@@ -119,18 +123,23 @@ class MainWindow:
         self.password_entry.grid(row=4, column=1)
         self.generate_password_button.grid(row=4, column=2)
         # creating add button to save the password
-        self.add_to_data_button = Button(text="Add", foreground='black', width=42, command=lambda: self.db_handler.save_to_db(self.user_id),
+        self.add_to_data_button = Button(text="Add", foreground='black', width=42,
+                                    command=lambda: self.db_handler.save_to_db(self.user_id, self.website_entry,
+                                                                               self.email_user_entry,
+                                                                               self.password_entry),
                                     highlightbackground='white',
                                     font=('Helvatical bold', 10,))
         self.add_to_data_button.grid(row=5, column=1, columnspan=2)
         # creating load button to load a JSON file
-        self.load_button = Button(text="Load JSON", foreground='black', width=42, command=lambda: self.db_handler.load_json_db(self.user_id),
+        self.load_button = Button(text="Load JSON", foreground='black', width=42, command=lambda: self.db_handler.load_json_db(self.user_id,
+                                                                                                                               self.website_entry),
                              highlightbackground='white',
                              font=('Helvetica bold', 10))
         self.load_button.grid(row=6, column=1, columnspan=2)
         window.mainloop()
 
     def update_dropdown(self):
+        self.db_handler.update_dropdown(self.user_id)
         try:
             existing_data = self.db_handler.get_encrypted_dictionary()
 

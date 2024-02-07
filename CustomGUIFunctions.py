@@ -21,8 +21,8 @@ class CommonFunctions:
         self.center_window(top, top_width, top_height)
 
         # Calculate the x and y coordinates to center the toplevel window
-        screen_width = window.winfo_screenwidth()
-        screen_height = window.winfo_screenheight()
+        screen_width = top.winfo_screenwidth()
+        screen_height = top.winfo_screenheight()
 
         x_position = (screen_width - top_width) // 2
         y_position = (screen_height - top_height) // 2

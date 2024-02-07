@@ -1,14 +1,14 @@
 import sqlite3
 import bcrypt
 from tkinter.simpledialog import askstring
+from CustomGUIFunctions import CommonFunctions
 
 
-
-class DatabaseHandler:
+class DatabaseHandler(CommonFunctions):
     def __init__(self, db_name='password_manager.db'):
+        super().__init__()
         self.db_name = db_name
         self.user_id = None
-
 
     def create_database_tables(self):
         with sqlite3.connect(self.db_name) as conn:
@@ -39,17 +39,17 @@ class DatabaseHandler:
                 # Attempt to execute a simple query to check if the tables exist
                 conn.execute("SELECT 1 FROM users LIMIT 1")
                 # If the query succeeds, the tables exist, and the database is not empty
-                login_prompt()
+                #login_prompt()
         except sqlite3.OperationalError as e:
             # Handle the case where the tables or database do not exist
             self.create_database_tables()
             # Let user know this isthe first time running the app and create a user
-            custom_showinfo(title='⚠️ Notice ⚠️', message='First Time\nRunning Password Manager.\nPlease Create a User')
+            self.custom_showinfo(title='⚠️ Notice ⚠️', message='First Time\nRunning Password Manager.\nPlease Create a User')
             # Prompt the user to create the first user
             self.create_first_user()
         except Exception as e:
             # Handle other exceptions that might occur
-            custom_showinfo(title='🛑 Error 🛑', message=f'An error occurred: {e}')
+            self.custom_showinfo(title='🛑 Error 🛑', message=f'An error occurred: {e}')
 
     # ---------------------------- START DATABASE USER FUNCTIONS ------------------------------- #
     def create_first_user(self):
@@ -79,9 +79,9 @@ class DatabaseHandler:
                         cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)",
                                        (username, hashed_password))
                         conn.commit()
-                        custom_showinfo(title='✅ Success ✅', message='User registered successfully!')
-                        user_id = cursor.lastrowid
-                        login_prompt()
+                        self.custom_showinfo(title='✅ Success ✅', message='User registered successfully!')
+                        self.user_id = cursor.lastrowid
+                        #login_prompt()
                         cursor.execute("SELECT id, password_hash FROM users WHERE username = ?", (username,))
                         result = cursor.fetchone()
                         if result:
@@ -92,9 +92,9 @@ class DatabaseHandler:
                                 # Password is correct, return the user_id
                                 return user_id
                     except sqlite3.IntegrityError:
-                        custom_showinfo(title='⚠️ Notice ⚠️', message='Username already exists!')
+                        self.custom_showinfo(title='⚠️ Notice ⚠️', message='Username already exists!')
             else:
-                custom_showinfo(title='⚠️ Notice ⚠️', message='Passwords did not match. Please try again.')
+                self.custom_showinfo(title='⚠️ Notice ⚠️', message='Passwords did not match. Please try again.')
 
     # Verify user exists in database ad return user ID
     def get_user_id(self, username, password):
