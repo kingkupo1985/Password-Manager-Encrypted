@@ -24,9 +24,11 @@ class EncryptionManager:
         return key
 
     def encrypt(self, data):
+        if isinstance(data, str):
+            data = data.encode()
         # Encrypt your data
         cipher = Fernet(self.key)
-        encrypted_data = cipher.encrypt(data.encode())
+        encrypted_data = cipher.encrypt(data)
         return encrypted_data
 
     def decrypt(self, encrypted_data):

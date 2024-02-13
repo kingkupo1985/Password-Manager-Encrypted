@@ -1,4 +1,4 @@
-from tkinter import Toplevel, Frame, Label, Button
+from tkinter import Toplevel, Frame, Label, Button, messagebox
 
 class CommonFunctions:
     def center_window(self, window, width, height):
@@ -10,6 +10,7 @@ class CommonFunctions:
 
         window.geometry(f"{width}x{height}+{x_position}+{y_position}")
     def custom_showinfo(self, title, message):
+        messagebox.showinfo(title, message)
         top = Toplevel()
         top.title(title)
         top.lift()

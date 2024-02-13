@@ -1,6 +1,6 @@
 import sqlite3
 import json
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from CustomGUIFunctions import CommonFunctions
 from EncryptionManager import EncryptionManager
 
@@ -10,9 +10,10 @@ class DatabaseDataHandler(CommonFunctions):
         self.db_handler = db_handler
         self.user_id = user_id
         self.website_dropdown = website_dropdown
+        self.encryption_manager = EncryptionManager()
 
     def get_encrypted_dictionary(self, user_id):
-        with sqlite3.connect(self.db_handler) as conn:
+        with sqlite3.connect(self.db_handler.db_name) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT encrypt_dictionary FROM passwords WHERE user_id = ?", (user_id,))
             result = cursor.fetchone()
@@ -20,26 +21,34 @@ class DatabaseDataHandler(CommonFunctions):
 
     # Save data to database has GUI controls
     def save_to_db(self, user_id, website_entry, email_user_entry, password_entry):
+        print("Line 24 in DataBaseDataHandler.py Function save_to_db")
         website = website_entry.get()
         username = email_user_entry.get()
         password = password_entry.get()
         if len(website) == 0 or len(username) == 0 or len(password) == 0:
             self.custom_showinfo(title='⚠️ Notice ⚠️', message='Please do not leave any fields blank!')
         else:
-            ok_to_save = self.custom_showinfo(title=website, message=f"These are the details you'd like to save"
-                                                                       f"\nUsername: {username}\nPassword: {password}")
+            message = f"These are the details you'd like to save\nUsername: {username}\nPassword: {password}"
+            ok_to_save = messagebox.askyesno(website, message)
+            print("Line 31 in DataBaseDataHandler.py Function save_to_db")
+            #ok_to_save = self.custom_showinfo(title=website, message=f"These are the details you'd like to save"
+            #                                                           f"\nUsername: {username}\nPassword: {password}")
+            print("Line 34 in DataBaseDataHandler.py Function save_to_db")
             if ok_to_save:
-                key = EncryptionManager.load_key() #add encryption class import
+                key = self.encryption_manager.load_key() #add encryption class import
+                print(key)
+                print("Line 38 in DataBaseDataHandler.py Function save_to_db")
                 try:
                     # Connect to the database
-                    with sqlite3.connect('password_manager.db') as conn:
+                    with sqlite3.connect(self.db_handler.db_name) as conn:
                         cursor = conn.cursor()
                         # Fetch the existing encrypted dictionary
                         existing_data = self.get_encrypted_dictionary(user_id)
                         if existing_data:
+                            data = {}
                             # Decrypt the existing data
                             try:
-                                existing_data_decrypted = EncryptionManager.decrypt(existing_data, key)
+                                existing_data_decrypted = self.encryption_manager.decrypt(existing_data)
                             except Exception as decryption_error:
                                 self.custom_showinfo(title='🛑 Warning 🛑', message=f"Decryption error: {decryption_error}")
                                 return
@@ -54,7 +63,7 @@ class DatabaseDataHandler(CommonFunctions):
                             }
                             existing_data_dict.update(new_data)
                             # Encrypt the updated data
-                            updated_data_encrypted = EncryptionManager.encrypt(json.dumps(existing_data_dict).encode('utf-8'), key)
+                            updated_data_encrypted = self.encryption_manager.encrypt(json.dumps(existing_data_dict).encode('utf-8'))
                             # Update the row in the database with the updated encrypted dictionary
                             cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
                                            (updated_data_encrypted, user_id))
@@ -71,12 +80,13 @@ class DatabaseDataHandler(CommonFunctions):
                                     'password': password
                                 }
                             }
-                            new_data_encrypted = EncryptionManager.encrypt(json.dumps(new_data).encode('utf-8'), key)
+                            new_data_encrypted = self.encryption_manager.encrypt(json.dumps(new_data).encode('utf-8'))
 
                             # Insert a new row with the encrypted dictionary
                             cursor.execute("INSERT INTO passwords (user_id, encrypt_dictionary) VALUES (?, ?)",
                                            (user_id, new_data_encrypted))
                             conn.commit()
+                            self.update_dropdown(user_id)
                             self.custom_showinfo(title='✅ Success! ✅', message='Your New Entry Was Saved!')
                             website_entry.delete(0, 'end')
                             email_user_entry.delete(0, 'end')
@@ -89,14 +99,14 @@ class DatabaseDataHandler(CommonFunctions):
         # Let's find a website and its logins
         website = website_entry.get()
         # Get the key to decrypt data
-        key = EncryptionManager.load_key()
+        key = self.encryption_manager.load_key()
 
         try:
             # Does the user exist and have anything stored?
             existing_data = self.get_encrypted_dictionary(user_id)
 
             if existing_data:
-                decrypted_data = EncryptionManager.decrypt(existing_data, key)
+                decrypted_data = self.encryption_manager.decrypt(existing_data, key)
                 # Read old data and save to variable
                 data = json.loads(decrypted_data)
             else:
@@ -119,13 +129,14 @@ class DatabaseDataHandler(CommonFunctions):
     # --- Drop Down Data Function Database --- #
     def update_dropdown(self, user_id):
         try:
-            key = EncryptionManager.load_key()
+            key = self.encryption_manager.load_key()
             try:
+                data = {}
                 # Does the user exist and have anything stored?
                 existing_data = self.get_encrypted_dictionary(user_id)
 
                 if existing_data:
-                    decrypted_data = EncryptionManager.decrypt(existing_data, key)
+                    decrypted_data = self.encryption_manager.decrypt(existing_data, key)
                     # Read old data and save to variable
                     data = json.loads(decrypted_data)
                 else:
@@ -137,14 +148,13 @@ class DatabaseDataHandler(CommonFunctions):
                     data = {}
             finally:
                 website_list = list(data.keys())
-                self.website_dropdown['values'] = website_list
         except (FileNotFoundError, json.JSONDecodeError) as error:
             self.custom_showinfo(title='🛑 Warning 🛑', message=f"Sorry Some Error Happened: {error}")
             with open('save_passwords.json.enc', mode='w') as save_file:
                 data = {}
 
         website_list = list(data.keys())
-        website_dropdown['values'] = website_list
+        self.website_dropdown['values'] = website_list
 
     # --- Load Old JSON File to Database --- #
     def load_json_db(self, user_id):
@@ -160,11 +170,11 @@ class DatabaseDataHandler(CommonFunctions):
         except (FileNotFoundError, json.JSONDecodeError):
             self.custom_showinfo(title='🛑 Error 🛑', message='Failed to load JSON file.')
             return
-        key = EncryptionManager.load_key()
+        key = self.encryption_manager.load_key()
         try:
             with sqlite3.connect(self.db_handler) as conn:
                 cursor = conn.cursor()
-                encrypted_data = EncryptionManager.encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
+                encrypted_data = self.encryption_manager.encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
                 cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
                                (encrypted_data, user_id))
                 conn.commit()
@@ -174,14 +184,14 @@ class DatabaseDataHandler(CommonFunctions):
 
                 if existing_row:
                     # If row exists, update it
-                    encrypted_data = EncryptionManager.encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
+                    encrypted_data = self.encryption_manager.encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
                     cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
                                    (encrypted_data, user_id))
                     conn.commit()
                     self.custom_showinfo(title='✅ Success! ✅', message=f"Your File Was Loaded and Updated Successfully!")
                 else:
                     # If no row exists, create the first row
-                    encrypted_data = EncryptionManager.encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
+                    encrypted_data = self.encryption_manager.encrypt(new_data_bytes, key)  # Pass bytes to encrypt function
                     cursor.execute("INSERT INTO passwords (user_id, encrypt_dictionary) VALUES (?, ?)",
                                    (user_id, encrypted_data))
                     conn.commit()
@@ -196,14 +206,14 @@ class DatabaseDataHandler(CommonFunctions):
         update_dropdown(user_id) # data for the drop down combobox in GUI handler for main window somehow
 
     def get_decrypted_dictionary(self, user_id):
-        key = EncryptionManager.load_key()
+        key = self.encryption_manager.load_key()
         try:
             with sqlite3.connect(self.db_handler) as conn:
                 cursor = conn.cursor()
                 cursor.execute("SELECT encrypt_dictionary FROM passwords WHERE user_id = ?", (user_id,))
                 encrypted_data = cursor.fetchone()
                 if encrypted_data:
-                    decrypted_data = EncryptionManager.decrypt(EncryptionManager.decrypt(encrypted_data[0], key))
+                    decrypted_data = self.encryption_manager.decrypt(self.encryption_manager.decrypt(encrypted_data[0], key))
                     return json.loads(decrypted_data)
                 else:
                     return {}

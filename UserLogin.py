@@ -10,6 +10,7 @@ class LoginWindow(CommonFunctions):
         self.username_entry = None
         self.password_entry = None
 
+    # Validate User Login
     def on_login(self):
         username = self.username_entry.get()
         password = self.password_entry.get()
@@ -24,6 +25,7 @@ class LoginWindow(CommonFunctions):
             self.custom_showinfo("🛑Login Failed🛑", "Invalid username or password")
             return False
 
+    # Create the Login Window Pop
     def create_login_window(self):
         self.login_window = Tk()
         self.login_window.title("Login")
@@ -42,8 +44,3 @@ class LoginWindow(CommonFunctions):
         Button(self.login_window, text="Create User", command=self.db_handler.create_first_user).pack(pady=10)
 
         self.login_window.mainloop()
-
-# Example usage to initiate the object:
-# db_handler = DatabaseHandler()
-# user_login = LoginWindow(db_handler)
-# user_login.create_login_window()
