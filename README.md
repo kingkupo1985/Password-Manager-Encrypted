@@ -3,11 +3,17 @@
 #### Milestones in this project for my learning purposes: ####
 
 FERNET - Encryption Used to Store Sensitive Data. We use Fernet for creating a unique key stored to the user's keyring on their PC so only they can access and decrypt the data while logged into their user
+
 BCRYPT - We use Bcrypt for having and storing the user password to access the app itself so when you create a user their password to login is fairly safe and hard to access from what I've read
+
 GUI Objects - Tkinter learned to use 1 window object and pass it between required classes to prevent errors and crashes this prevented a JSON loading crash regularly I had multiple Tk()'s and when I would try to load a JSON to store it securely the app would crash and give me an error popup from my OS, not the terminal runtime or tkinter popup python would crash. It was a good learning curve about the GUI windows, how to collect data and pass it like the USER to make sure we have the correct encrypted data to display when they want to retrieve an old password to log in. 
+
 GUI Tkinter DROPDOWN - Never used a Dropdown Object in Tkinter only online. Was a great widget to learn how to use, update, and retrieve data with. 
+
 SQLITE3 - First time using a database through an offline app with SQLITE3, I've used jinja, and flask in the past for online apps like a blog build but never a stand-alone app. Had to build SQL commands and couldn't use SQLAlchemy which I was familiar with. 
-CLASS INHERITANCE - ONly read about it, wanted all windows to be centered when created so I created a CommonFunction to center Tkinter windows when they're created, and classes MainWindow and LoginWindow both inherit CommonFunctions properties to call the center screen function.
+
+CLASS INHERITANCE - Only used inherit properties from other classes but this time I created a class and had another class inherit the properties, wanted all windows to be centered when created so I created a CommonFunction to center Tkinter windows when they're created, and classes MainWindow and LoginWindow both inherit CommonFunctions properties to call the center screen function.
+
 THREADING - Wrapped JSON loader to make sure we didn't have a concurrency error between Tk() window and filedialog opening to load in a file. 
 
 
