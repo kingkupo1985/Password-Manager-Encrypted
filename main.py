@@ -1,6 +1,5 @@
 from DatabaseUserHandler import DatabaseHandler
 from UserLogin import LoginWindow
-from MainWindow import MainWindow
 from tkinter import *
 
 # Usage example
