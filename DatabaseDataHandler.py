@@ -48,8 +48,6 @@ class DatabaseDataHandler(CommonFunctions):
             ok_to_save = messagebox.askyesno(website, message)
             if ok_to_save:
                 key = self.encryption_manager.load_key() #add encryption class import
-                print(key)
-                print("Line 38 in DataBaseDataHandler.py Function save_to_db")
                 try:
                     # Connect to the database
                     with sqlite3.connect(self.db_handler.db_name) as conn:
@@ -211,7 +209,6 @@ class DatabaseDataHandler(CommonFunctions):
             data.update(new_data)
 
         self.update_dropdown(user_id) # update dropdown with list
-
 
     def load_json_concurrently_wrapper(self, user_id):
         # Wrapper function to run load_json_concurrently in a separate thread

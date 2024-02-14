@@ -9,6 +9,8 @@ class CommonFunctions:
         y_position = (screen_height - height) // 2
 
         window.geometry(f"{width}x{height}+{x_position}+{y_position}")
+
+    #Outdata Function No longer used due to executiong issues needs to pass a YES or NO for some instances
     def custom_showinfo(self, title, message):
         messagebox.showinfo(title, message)
         top = Toplevel()
