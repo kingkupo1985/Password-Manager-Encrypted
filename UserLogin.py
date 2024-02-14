@@ -1,4 +1,4 @@
-from tkinter import Tk, Label, Entry, Button
+from tkinter import Tk, Label, Entry, Button, messagebox
 from CustomGUIFunctions import CommonFunctions
 
 class LoginWindow(CommonFunctions):
@@ -18,11 +18,11 @@ class LoginWindow(CommonFunctions):
         self.user_id = self.db_handler.get_user_id(username, password)
 
         if self.user_id is not None:
-            self.custom_showinfo("✅Login Successful✅", f"Welcome, {username}, Your User ID:{self.user_id}!")
+            messagebox.showinfo("✅Login Successful✅", f"Welcome, {username}, Your User ID:{self.user_id}!")
             self.login_window.destroy()
             return True
         else:
-            self.custom_showinfo("🛑Login Failed🛑", "Invalid username or password")
+            messagebox.showinfo("🛑Login Failed🛑", "Invalid username or password")
             return False
 
     # Create the Login Window Pop

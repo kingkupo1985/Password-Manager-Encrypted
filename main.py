@@ -17,7 +17,7 @@ if __name__ == "__main__":
     if login_window.user_id is not None:
         print(f"User ID: {login_window.user_id}")
         #Let's create our object to handle data between the GUI window and database do I need this?
-        data_handler = DatabaseDataHandler(db_handler=database, user_id=login_window.user_id, website_dropdown=None)
+        # data_handler = DatabaseDataHandler(db_handler=database, user_id=login_window.user_id, website_dropdown=None)
         # Let's create our GUI window
         gui_window = MainWindow(db_handler=database, user_id=login_window.user_id)
         gui_window.create_main_window()

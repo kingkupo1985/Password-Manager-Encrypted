@@ -20,21 +20,21 @@ class MainWindow(CommonFunctions):
         self.generate_password_button = None
         self.user_id = user_id
         self.encryption_manager = EncryptionManager()
-        self.data_handler = DatabaseDataHandler(db_handler, user_id, self.website_dropdown)
+        self.data_handler = DatabaseDataHandler(self.db_handler, self.user_id, self.website_dropdown)
 
 
     def display_selected_website(self, *args):
         selected_website = self.website_dropdown.get()
         try:
-            data = self.db_handler.get_decrypted_dictionary()
+            print("Line  29 in  DatabaseDataHandler Class")
+            data = self.data_handler.get_decrypted_dictionary(user_id=self.user_id)
         except Exception as error:
             data = {}
-            # Handle the error appropriately (e.g., show a messagebox)
-
+            messagebox.showinfo(title=f'Warning', message=f'Something Happened: {error}')
         if selected_website:
             email = data.get(selected_website, {}).get('username', 'N/A')
             password = data.get(selected_website, {}).get('password', 'N/A')
-            self.custom_showinfo(title=f'Login Information for: {selected_website}', message=f'Username: {email}\nPassword: {password}')
+            messagebox.showinfo(title=f'Login Information for: {selected_website}', message=f'Username: {email}\nPassword: {password}')
 
     def generate_password(self):
         letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
@@ -64,7 +64,7 @@ class MainWindow(CommonFunctions):
             with open('save_passwords.json.enc', mode='rb') as save_file:
                 # Decrypt the file
                 encrypted_data = save_file.read()
-                decrypted_data = self.encryption_manager.decrypt(encrypted_data, key)
+                decrypted_data = self.encryption_manager.decrypt(encrypted_data)
                 # Read old data and save to variable
                 data = json.loads(decrypted_data)
         except (FileNotFoundError, json.JSONDecodeError):
@@ -75,10 +75,10 @@ class MainWindow(CommonFunctions):
             if website in data:
                 email = data[website]['username']
                 password = data[website]['password']
-                self.custom_showinfo(title=f'Login Information for: {website}',
+                messagebox.showinfo(title=f'Login Information for: {website}',
                                     message=f'Username:{email}\n Password:{password}')
             else:
-                self.custom_showinfo(title=f'Website Not Found',
+                messagebox.showinfo(title=f'Website Not Found',
                                     message=f'Sorry, No Entry Found')
 
     def create_main_window(self):
@@ -135,8 +135,7 @@ class MainWindow(CommonFunctions):
         self.add_to_data_button.grid(row=5, column=1, columnspan=2)
         # creating load button to load a JSON file
         self.load_button = Button(text="Load JSON", foreground='black', width=42,
-                                  command=lambda: self.db_handler.load_json_db(self.user_id,
-                                                                               self.website_entry),
+                                  command=lambda: self.data_handler.load_json_concurrently_wrapper(self.user_id),
                                   highlightbackground='white',
                                   font=('Helvetica bold', 10))
         self.load_button.grid(row=6, column=1, columnspan=2)
@@ -159,7 +158,7 @@ class MainWindow(CommonFunctions):
         self.website_dropdown['values'] = website_list
 
     def pre_save_to_db(self, user_id, website_entry, email_user_entry, password_entry):
-        # Print message to terminal
-        print("Button clicked! About to save data to database...")
+
         # Call the function from the other class
         self.data_handler.save_to_db(user_id, website_entry, email_user_entry, password_entry)
+

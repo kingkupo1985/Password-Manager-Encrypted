@@ -1,5 +1,6 @@
 import sqlite3
 import bcrypt
+from tkinter import messagebox
 from tkinter.simpledialog import askstring
 from CustomGUIFunctions import CommonFunctions
 
@@ -44,12 +45,12 @@ class DatabaseHandler(CommonFunctions):
             # Handle the case where the tables or database do not exist
             self.create_database_tables()
             # Let user know this isthe first time running the app and create a user
-            self.custom_showinfo(title='⚠️ Notice ⚠️', message='First Time\nRunning Password Manager.\nPlease Create a User')
+            messagebox.showinfo(title='⚠️ Notice ⚠️', message='First Time\nRunning Password Manager.\nPlease Create a User')
             # Prompt the user to create the first user
             self.create_first_user()
         except Exception as e:
             # Handle other exceptions that might occur
-            self.custom_showinfo(title='🛑 Error 🛑', message=f'An error occurred: {e}')
+            messagebox.showinfo(title='🛑 Error 🛑', message=f'An error occurred: {e}')
 
     # ---------------------------- START DATABASE USER FUNCTIONS ------------------------------- #
     def create_first_user(self):
@@ -79,7 +80,7 @@ class DatabaseHandler(CommonFunctions):
                         cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)",
                                        (username, hashed_password))
                         conn.commit()
-                        self.custom_showinfo(title='✅ Success ✅', message='User registered successfully!')
+                        messagebox.showinfo(title='✅ Success ✅', message='User registered successfully!')
                         self.user_id = cursor.lastrowid
                         #login_prompt()
                         cursor.execute("SELECT id, password_hash FROM users WHERE username = ?", (username,))
@@ -92,9 +93,9 @@ class DatabaseHandler(CommonFunctions):
                                 # Password is correct, return the user_id
                                 return user_id
                     except sqlite3.IntegrityError:
-                        self.custom_showinfo(title='⚠️ Notice ⚠️', message='Username already exists!')
+                        messagebox.showinfo(title='⚠️ Notice ⚠️', message='Username already exists!')
             else:
-                self.custom_showinfo(title='⚠️ Notice ⚠️', message='Passwords did not match. Please try again.')
+                messagebox.showinfo(title='⚠️ Notice ⚠️', message='Passwords did not match. Please try again.')
 
     # Verify user exists in database ad return user ID
     def get_user_id(self, username, password):
