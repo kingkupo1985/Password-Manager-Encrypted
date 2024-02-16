@@ -1,6 +1,11 @@
-from tkinter import Tk, Label, Entry, Button, messagebox
+import tkinter
+from tkinter import Tk, Label, Entry, messagebox
+from PIL import Image, ImageTk
+from os.path import join
 from CustomGUIFunctions import CommonFunctions
+from CustomButton import CustomButton
 from MainWindow import MainWindow
+from button_images import label_images
 
 class LoginWindow(CommonFunctions):
     def __init__(self, db_handler, window):
@@ -13,25 +18,44 @@ class LoginWindow(CommonFunctions):
         self.password_entry = None
         self.window.title("Login")
         self.window.config(padx=10, pady=10)
+        self.window.config(background="#A87C7C")
 
         # Prevent window from resizing based on its contents
         self.window.grid_columnconfigure(0, weight=1)  # Make the column expandable
         self.window.grid_rowconfigure(3, weight=1)  # Make the last row expandable
 
-        Label(self.window, text="Username:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        # Display Username label graphics for username label
+        self.display_label(labelname="username", row=0, col=0)
+
+        # Display username entry graphics (coming soon)
         self.username_entry = Entry(self.window)
         self.username_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
 
-        Label(self.window, text="Password:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        # Display Password label graphics for username label
+        self.display_label(labelname="password", row=1, col=0)
+        # Display username entry graphics (coming soon)
         self.password_entry = Entry(self.window, show="*")
         self.password_entry.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
 
-        Button(self.window, text="Login", command=self.on_login).grid(row=2, column=0, columnspan=2, sticky="ew",
-                                                                      padx=5, pady=10)
-        Button(self.window, text="Create User", command=self.db_handler.create_first_user).grid(row=3, column=0,
-                                                                                                columnspan=2,
-                                                                                                sticky="ew", padx=5,
-                                                                                                pady=10)
+        CustomButton(self.window,
+                     width=122,
+                     height=40,
+                     button_name="Login",
+                     command=self.on_login).grid(row=2,
+                                                 column=0,
+                                                 columnspan=2,
+                                                 padx=5,
+                                                 pady=10
+                                                 )
+        CustomButton(self.window,
+                     width=122, height=40,
+                     button_name="Create User",
+                     command=self.db_handler.create_first_user).grid(row=3,
+                                                                     column=0,
+                                                                     columnspan=2,
+                                                                     padx=5,
+                                                                     pady=10
+                                                                     )
 
         # Calculate and set the window size based on widget sizes
         self.window.update_idletasks()  # Update the window to calculate widget sizes
@@ -64,3 +88,15 @@ class LoginWindow(CommonFunctions):
         # Hide all login widgets
         for widget in self.window.winfo_children():
             widget.destroy()
+
+    def load_image(self, label):
+        path = join("images/labels", label)
+        image = Image.open(path).convert("RGBA")
+        return ImageTk.PhotoImage(image)
+
+    def display_label(self, labelname, row, col):
+        image = label_images.get(labelname)
+        label_img = self.load_image(image)
+        label = Label(self.window, image=label_img, bd=0, highlightthickness=0)
+        label.image = label_img
+        Label(self.window, image=label_img, bd=0, highlightthickness=0).grid(row=row, column=col)

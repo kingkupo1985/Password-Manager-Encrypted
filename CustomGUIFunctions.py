@@ -1,7 +1,11 @@
 from tkinter import Toplevel, Frame, Label, Button, messagebox
+from button_images import label_images
+from PIL import Image, ImageTk
+from os.path import join
 
 class CommonFunctions:
     def center_window(self, window, width, height):
+        window.config(background="#A87C7C", highlightbackground="#A87C7C")
         screen_width = window.winfo_screenwidth()
         screen_height = window.winfo_screenheight()
 
