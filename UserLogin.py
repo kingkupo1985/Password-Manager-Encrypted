@@ -57,12 +57,10 @@ class LoginWindow(CommonFunctions):
     def open_main_window(self):
         # close login / minimize
         self.hide_login_widgets()
-        print("Line 62 login window missing but no mainwindow correct?")
         # Create an instance of MainWindow passing the LoginWindow instance
         MainWindow(self.db_handler, window=self.window, user_id=self.user_id)
 
     def hide_login_widgets(self):
         # Hide all login widgets
         for widget in self.window.winfo_children():
-            print(widget)
             widget.destroy()

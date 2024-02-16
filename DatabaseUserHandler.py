@@ -4,7 +4,6 @@ from tkinter import messagebox
 from tkinter.simpledialog import askstring
 from CustomGUIFunctions import CommonFunctions
 
-
 class DatabaseHandler(CommonFunctions):
     def __init__(self, db_name='password_manager.db'):
         super().__init__()

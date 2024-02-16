@@ -91,18 +91,6 @@ class MainWindow(CommonFunctions):
         window_height = self.window.winfo_reqheight()
         self.window.geometry(f"{window_width}x{window_height}")
         self.center_window(self.window, width=window_width, height=window_height)
-    def display_selected_website(self, *args):
-        selected_website = self.website_dropdown.get()
-        try:
-            print("Line  29 in  DatabaseDataHandler Class")
-            data = self.data_handler.get_decrypted_dictionary(user_id=self.user_id)
-        except Exception as error:
-            data = {}
-            messagebox.showinfo(title=f'Warning', message=f'Something Happened: {error}')
-        if selected_website:
-            email = data.get(selected_website, {}).get('username', 'N/A')
-            password = data.get(selected_website, {}).get('password', 'N/A')
-            messagebox.showinfo(title=f'Login Information for: {selected_website}', message=f'Username: {email}\nPassword: {password}')
 
     def generate_password(self):
         letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
@@ -145,6 +133,19 @@ class MainWindow(CommonFunctions):
                 messagebox.showinfo(title=f'Website Not Found',
                                     message=f'Sorry, No Entry Found')
 
+    def display_selected_website(self, *args):
+        selected_website = self.website_dropdown.get()
+        try:
+            # Retrieve the decrypted dictionary data
+            data = self.data_handler.get_decrypted_dictionary(user_id=self.user_id)
+        except Exception as error:
+            data = {}
+            messagebox.showinfo(title='Warning', message=f'Something Happened: {error}')
+        if selected_website:
+            email = data.get(selected_website, {}).get('username', 'N/A')
+            password = data.get(selected_website, {}).get('password', 'N/A')
+            messagebox.showinfo(title=f'Login Information for: {selected_website}',
+                                message=f'Website:{selected_website}\nUsername: {email}\nPassword: {password}')
     def update_dropdown(self):
         try:
             existing_data = self.data_handler.get_encrypted_dictionary(self.user_id)
@@ -154,7 +155,7 @@ class MainWindow(CommonFunctions):
                 data = json.loads(decrypted_data)
             else:
                 data = {}
-        except (FileNotFoundError, json.JSONDecodeError) as error:
+        except (FileNotFoundError, json.JSONDecodeError, TypeError) as error:
             messagebox.showinfo(title='Warning', message=f"Sorry Some Error Happened: {error}")
             data = {}
 
