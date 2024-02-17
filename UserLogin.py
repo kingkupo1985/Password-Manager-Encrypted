@@ -1,5 +1,4 @@
-import tkinter
-from tkinter import Tk, Label, Entry, messagebox
+from tkinter import Label, Entry, messagebox
 from PIL import Image, ImageTk
 from os.path import join
 from CustomGUIFunctions import CommonFunctions
@@ -36,6 +35,7 @@ class LoginWindow(CommonFunctions):
         # Display username entry graphics (coming soon)
         self.password_entry = Entry(self.window, show="*")
         self.password_entry.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
+
 
         CustomButton(self.window,
                      width=122,

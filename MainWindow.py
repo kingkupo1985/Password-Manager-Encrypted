@@ -2,10 +2,13 @@ import json
 from tkinter import *
 from tkinter import messagebox, ttk
 from random import shuffle, randint, choice
+from os.path import join
+from PIL import Image, ImageTk
 from EncryptionManager import EncryptionManager
 from CustomGUIFunctions import CommonFunctions
 from DatabaseDataHandler import DatabaseDataHandler
 from CustomButton import CustomButton
+from button_images import label_images
 
 
 class MainWindow(CommonFunctions):
@@ -36,38 +39,69 @@ class MainWindow(CommonFunctions):
         self.lock_img = PhotoImage(file='logo.png')
         canvas.create_image(100, 100, image=self.lock_img)
         canvas.grid(row=0, column=1)
+
         # Drop down with list of sites saves
-        website_dropdown_label = Label(text='Select Website:', bg='white', fg='black', highlightthickness=0)
-        self.website_dropdown = ttk.Combobox(width=18, state="readonly", postcommand=self.update_dropdown)
-        website_dropdown_label.grid(row=1, column=0)
-        self.website_dropdown.grid(row=1, column=1, columnspan=2)
+        self.display_label(labelname="select one", row=1, col=0)
+        self.website_dropdown = ttk.Combobox(width=20,
+                                             state="readonly",
+                                             postcommand=self.update_dropdown,
+                                             background="#3e3232",
+                                             foreground="#3E3232",
+                                             font=("Poppins", 24, "bold")
+                                             )
+        self.website_dropdown.grid(row=1, column=1)
         self.website_dropdown.bind("<<ComboboxSelected>>", self.display_selected_website)
         # setting dropdown styling
         style = ttk.Style()
-        style.theme_use('clam')
-        style.configure("TCombobox", fieldbackground="orange", background="white")
+        style.theme_use("clam")
+        style.configure(style="TCombobox",
+                        fieldbackground=[("readonly","#3E3232"),("active", "#3E3232")],
+                        background="#3E3232",
+                        font=("Poppins", 24, "bold"),
+                        bd=0
+                        )
         # creating website labels and entry fields
-        website_label = Label(text='Website:', bg='white', fg='black', highlightthickness=0)
-        self.website_entry = Entry(width=21, bg='white', highlightthickness=0, fg='black', insertbackground='black')
+        self.website_entry = Entry(width=15,
+                                   bg='white',
+                                   fg='black',
+                                   highlightthickness=0,
+                                   insertbackground='#A87C7C',
+                                   background="#A87C7C",
+                                   font=("Poppins", 24, "bold"),
+                                   foreground="#503C3C"
+                                   )
         website_button = CustomButton(self.window, width=122, height=40, button_name="Search",
                                       command=lambda: self.data_handler.find_password_db(self.user_id,
                                                                                          self.website_entry))
-        website_label.grid(row=2, column=0)
+        self.display_label(labelname="website", row=2, col=0)
         self.website_entry.grid(row=2, column=1)
         website_button.grid(row=2, column=2)
+
         # creating email label and entry field
-        email_user_label = Label(text='Email/Username', bg='white', fg='black')
-        self.email_user_entry = Entry(width=35, bg='white', fg='black', highlightthickness=0,
-                                      insertbackground='black')
-        email_user_label.grid(row=3, column=0)
-        self.email_user_entry.grid(row=3, column=1, columnspan=2)
+        self.email_user_entry = Entry(width=20,
+                                      bg='white',
+                                      fg='black',
+                                      highlightthickness=0,
+                                      insertbackground='#A87C7C',
+                                      background="#A87C7C",
+                                      font=("Poppins", 24, "bold"),
+                                      foreground="#503C3C"
+                                      )
+        self.display_label(labelname="email", row=3, col=0)
+        self.email_user_entry.grid(row=3, column=1, columnspan=2, pady=5)
         # creating password label, entry field, and button
-        password_label = Label(text='Password', bg='white', fg='black')
-        self.password_entry = Entry(width=21, bg='white', fg='black', highlightthickness=0,
-                                    insertbackground='black')
+        self.password_entry = Entry(width=15,
+                                    bg='white',
+                                    fg='black',
+                                    highlightthickness=0,
+                                    insertbackground='#A87C7C',
+                                    background="#A87C7C",
+                                    font=("Poppins", 24, "bold"),
+                                    foreground="#503C3C"
+                                    )
         self.generate_password_button = CustomButton(self.window, width=122, height=40, button_name="Generate Password", command=self.generate_password)
-        password_label.grid(row=4, column=0)
-        self.password_entry.grid(row=4, column=1)
+        self.display_label(labelname="password", row=4, col=0)
+        self.password_entry.grid(row=4, column=1, padx=5)
         self.generate_password_button.grid(row=4, column=2)
         # creating add button to save the password
         self.add_to_data_button = CustomButton(self.window, width=122, height=40, button_name="Add",
@@ -76,7 +110,7 @@ class MainWindow(CommonFunctions):
                                                                                    email_user_entry=self.email_user_entry,
                                                                                    password_entry=self.password_entry),
                                                )
-        self.add_to_data_button.grid(row=5, column=1, columnspan=2)
+        self.add_to_data_button.grid(row=5, column=1, columnspan=2, pady=5)
         # creating load button to load a JSON file
         self.load_button = CustomButton(self.window, width=122, height=40, button_name="Load JSON", command=lambda: self.data_handler.load_json_concurrently_wrapper(self.user_id))
         self.load_button.grid(row=6, column=1, columnspan=2)
@@ -161,3 +195,15 @@ class MainWindow(CommonFunctions):
 
         # Call the function from the other class
         self.data_handler.save_to_db(user_id, website_entry, email_user_entry, password_entry)
+
+    def load_image(self, label):
+        path = join("images/labels", label)
+        image = Image.open(path).convert("RGBA")
+        return ImageTk.PhotoImage(image)
+
+    def display_label(self, labelname, row, col):
+        image = label_images.get(labelname)
+        label_img = self.load_image(image)
+        label = Label(self.window, image=label_img, bd=0, highlightthickness=0)
+        label.image = label_img
+        Label(self.window, image=label_img, bd=0, highlightthickness=0).grid(row=row, column=col)

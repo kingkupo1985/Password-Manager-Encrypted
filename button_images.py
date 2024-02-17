@@ -35,7 +35,7 @@ label_images = {
     "username": "username_label.png",
     "welcome": "welcome_label.png",
     "password": "password_label.png",
-    "website": "website_label,png",
+    "website": "website_label.png",
     "email": "email_label.png",
     "select one": "select_label.png",
 }
