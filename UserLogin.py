@@ -10,6 +10,7 @@ class LoginWindow(CommonFunctions):
     def __init__(self, db_handler, window):
         super().__init__()
         self.window = window
+        self.window.resizable(0, 0)
         self.db_handler = db_handler
         self.user_id = None
         self.login_window = None

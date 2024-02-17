@@ -16,6 +16,7 @@ class MainWindow(CommonFunctions):
         super().__init__()
         self.db_handler = db_handler
         self.window = window
+        self.window.resizable(0, 0)
         self.login_window = window
         self.lock_img = None
         self.website_entry = None
@@ -28,31 +29,30 @@ class MainWindow(CommonFunctions):
         self.user_id = user_id
         self.encryption_manager = EncryptionManager()
         self.data_handler = DatabaseDataHandler(self.db_handler, self.user_id, self.website_dropdown)
-
         self.window.title("Password Manager")
-        self.window.config(padx=50, pady=50, bg='white')
+        self.window.config(padx=20, pady=20, bg='white')
         # Prevent window from resizing based on its contents
         self.window.grid_columnconfigure(0, weight=1)  # Make the column expandable
         self.window.grid_rowconfigure(6, weight=1)  # Make the last row expandable
+        style = ttk.Style()
         # add image
         canvas = Canvas(width=200, height=200, bg='white', highlightthickness=0, relief="flat")
-        self.lock_img = PhotoImage(file='logo.png')
+        self.lock_img = PhotoImage(file='images/logo/logo.png')
         canvas.create_image(100, 100, image=self.lock_img)
-        canvas.grid(row=0, column=1)
+        canvas.grid(row=0, column=0, columnspan=3, pady=5)
 
         # Drop down with list of sites saves
         self.display_label(labelname="select one", row=1, col=0)
-        self.website_dropdown = ttk.Combobox(width=20,
+        self.website_dropdown = ttk.Combobox(width=19,
                                              state="readonly",
                                              postcommand=self.update_dropdown,
                                              background="#3e3232",
                                              foreground="#3E3232",
                                              font=("Poppins", 24, "bold")
                                              )
-        self.website_dropdown.grid(row=1, column=1)
+        self.website_dropdown.grid(row=1, column=1, columnspan=2, padx=(5, 0))
         self.website_dropdown.bind("<<ComboboxSelected>>", self.display_selected_website)
         # setting dropdown styling
-        style = ttk.Style()
         style.theme_use("clam")
         style.configure(style="TCombobox",
                         fieldbackground=[("readonly","#3E3232"),("active", "#3E3232")],
@@ -61,21 +61,20 @@ class MainWindow(CommonFunctions):
                         bd=0
                         )
         # creating website labels and entry fields
-        self.website_entry = Entry(width=15,
-                                   bg='white',
-                                   fg='black',
-                                   highlightthickness=0,
-                                   insertbackground='#A87C7C',
+        self.website_entry = Entry(width=20,
                                    background="#A87C7C",
                                    font=("Poppins", 24, "bold"),
-                                   foreground="#503C3C"
-                                   )
+                                   foreground="#503C3C",
+                                   insertbackground="#503C3C",  # set color of the cursor in entry field
+                                   highlightbackground='#A87C7C',  # entry field color when not inm focus
+                                   highlightcolor='#503C3C',  # entry field when in focus
+                                   highlightthickness=5)
         website_button = CustomButton(self.window, width=122, height=40, button_name="Search",
                                       command=lambda: self.data_handler.find_password_db(self.user_id,
                                                                                          self.website_entry))
         self.display_label(labelname="website", row=2, col=0)
-        self.website_entry.grid(row=2, column=1)
-        website_button.grid(row=2, column=2)
+        self.website_entry.grid(row=2, column=1, padx=(5,0), columnspan=2)
+        website_button.grid(row=5, column=2)
 
         # creating email label and entry field
         self.email_user_entry = Entry(width=20,
@@ -88,21 +87,21 @@ class MainWindow(CommonFunctions):
                                       foreground="#503C3C"
                                       )
         self.display_label(labelname="email", row=3, col=0)
-        self.email_user_entry.grid(row=3, column=1, columnspan=2, pady=5)
+        self.email_user_entry.grid(row=3, column=1, pady=5, padx=(5,0), columnspan=2)
         # creating password label, entry field, and button
-        self.password_entry = Entry(width=15,
-                                    bg='white',
-                                    fg='black',
-                                    highlightthickness=0,
+        self.password_entry = Entry(width=20,
                                     insertbackground='#A87C7C',
                                     background="#A87C7C",
                                     font=("Poppins", 24, "bold"),
-                                    foreground="#503C3C"
+                                    foreground="#503C3C",
+                                    highlightbackground='#A87C7C',  # Color when widget is not focused
+                                    highlightcolor='#A87C7C',  # Color when widget is focused
+                                    highlightthickness=2
                                     )
         self.generate_password_button = CustomButton(self.window, width=122, height=40, button_name="Generate Password", command=self.generate_password)
         self.display_label(labelname="password", row=4, col=0)
-        self.password_entry.grid(row=4, column=1, padx=5)
-        self.generate_password_button.grid(row=4, column=2)
+        self.password_entry.grid(row=4, column=1, padx=(5,0), columnspan=2)
+        self.generate_password_button.grid(row=5, column=1, padx=(25,0), pady=5)
         # creating add button to save the password
         self.add_to_data_button = CustomButton(self.window, width=122, height=40, button_name="Add",
                                                command=lambda: self.pre_save_to_db(user_id=self.user_id,
@@ -110,10 +109,14 @@ class MainWindow(CommonFunctions):
                                                                                    email_user_entry=self.email_user_entry,
                                                                                    password_entry=self.password_entry),
                                                )
-        self.add_to_data_button.grid(row=5, column=1, columnspan=2, pady=5)
+        self.add_to_data_button.grid(row=5, column=0)
         # creating load button to load a JSON file
         self.load_button = CustomButton(self.window, width=122, height=40, button_name="Load JSON", command=lambda: self.data_handler.load_json_concurrently_wrapper(self.user_id))
-        self.load_button.grid(row=6, column=1, columnspan=2)
+        self.load_button.grid(row=6, column=0)
+        self.clear_button = CustomButton(self.window, width=122, height=40, button_name="Clear", command=self.clear_entry)
+        self.clear_button.grid(row=6, column=1, padx=(25,0), pady=5)
+        self.logout_button = CustomButton(self.window, width=122, height=40, button_name="Logout", command=self.logout)
+        self.logout_button.grid(row=6, column=2)
         self.window.update_idletasks()  # Update the window to calculate widget sizes
         window_width = self.window.winfo_reqwidth()
         window_height = self.window.winfo_reqheight()
@@ -174,6 +177,12 @@ class MainWindow(CommonFunctions):
             password = data.get(selected_website, {}).get('password', 'N/A')
             messagebox.showinfo(title=f'Login Information for: {selected_website}',
                                 message=f'Website:{selected_website}\nUsername: {email}\nPassword: {password}')
+            self.website_entry.delete(0, END)
+            self.website_entry.insert(0, selected_website)
+            self.email_user_entry.delete(0,END)
+            self.email_user_entry.insert(0, email)
+            self.password_entry.delete(0, END)
+            self.password_entry.insert(0, password)
 
     def update_dropdown(self):
         try:
@@ -207,3 +216,16 @@ class MainWindow(CommonFunctions):
         label = Label(self.window, image=label_img, bd=0, highlightthickness=0)
         label.image = label_img
         Label(self.window, image=label_img, bd=0, highlightthickness=0).grid(row=row, column=col)
+
+    def clear_entry(self):
+        self.website_entry.delete(0, END)
+        self.email_user_entry.delete(0, END)
+        self.password_entry.delete(0, END)
+
+    def logout(self):
+        from UserLogin import LoginWindow
+        for widget in self.window.winfo_children():
+            widget.destroy()
+        self.user_id = None
+        LoginWindow(self.db_handler, self.window)
+

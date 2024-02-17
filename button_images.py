@@ -28,6 +28,16 @@ button_images = {
         "base": "search.png",
         "hover": "search_hover.png",
         "pressed": "search_pressed.png"
+    },
+    "Logout": {
+        "base": "logout.png",
+        "hover": "logout_hover.png",
+        "pressed": "logout_pressed.png"
+    },
+    "Clear": {
+        "base": "clear.png",
+        "hover": "clear_hover.png",
+        "pressed": "clear_pressed.png"
     }
 }
 
