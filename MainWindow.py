@@ -78,25 +78,25 @@ class MainWindow(CommonFunctions):
 
         # creating email label and entry field
         self.email_user_entry = Entry(width=20,
-                                      bg='white',
-                                      fg='black',
-                                      highlightthickness=0,
-                                      insertbackground='#A87C7C',
                                       background="#A87C7C",
                                       font=("Poppins", 24, "bold"),
-                                      foreground="#503C3C"
+                                      foreground="#503C3C",
+                                      insertbackground="#503C3C",  # set color of the cursor in entry field
+                                      highlightbackground='#A87C7C',  # entry field color when not inm focus
+                                      highlightcolor='#503C3C',  # entry field when in focus
+                                      highlightthickness=5
                                       )
         self.display_label(labelname="email", row=3, col=0)
         self.email_user_entry.grid(row=3, column=1, pady=5, padx=(5,0), columnspan=2)
         # creating password label, entry field, and button
         self.password_entry = Entry(width=20,
-                                    insertbackground='#A87C7C',
                                     background="#A87C7C",
                                     font=("Poppins", 24, "bold"),
                                     foreground="#503C3C",
-                                    highlightbackground='#A87C7C',  # Color when widget is not focused
-                                    highlightcolor='#A87C7C',  # Color when widget is focused
-                                    highlightthickness=2
+                                    insertbackground="#503C3C",  # set color of the cursor in entry field
+                                    highlightbackground='#A87C7C',  # entry field color when not inm focus
+                                    highlightcolor='#503C3C',  # entry field when in focus
+                                    highlightthickness=5
                                     )
         self.generate_password_button = CustomButton(self.window, width=122, height=40, button_name="Generate Password", command=self.generate_password)
         self.display_label(labelname="password", row=4, col=0)
@@ -221,6 +221,7 @@ class MainWindow(CommonFunctions):
         self.website_entry.delete(0, END)
         self.email_user_entry.delete(0, END)
         self.password_entry.delete(0, END)
+        self.website_dropdown.set("")
 
     def logout(self):
         from UserLogin import LoginWindow

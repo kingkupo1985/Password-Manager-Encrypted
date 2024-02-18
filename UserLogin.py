@@ -44,17 +44,32 @@ class LoginWindow(CommonFunctions):
                      button_name="Login",
                      command=self.on_login).grid(row=2,
                                                  column=0,
-                                                 columnspan=2,
-                                                 padx=5,
+                                                 padx=(50,0),
                                                  pady=10
                                                  )
         CustomButton(self.window,
                      width=122, height=40,
                      button_name="Create User",
+                     command=self.db_handler.create_first_user).grid(row=2,
+                                                                     column=1,
+                                                                     padx=0,
+                                                                     pady=10
+                                                                     )
+        CustomButton(self.window,
+                     width=122,
+                     height=40,
+                     button_name="Import User",
+                     command=self.on_login).grid(row=3,
+                                                 column=0,
+                                                 padx=(50, 0),
+                                                 pady=10
+                                                 )
+        CustomButton(self.window,
+                     width=122, height=40,
+                     button_name="Export User",
                      command=self.db_handler.create_first_user).grid(row=3,
-                                                                     column=0,
-                                                                     columnspan=2,
-                                                                     padx=5,
+                                                                     column=1,
+                                                                     padx=0,
                                                                      pady=10
                                                                      )
 

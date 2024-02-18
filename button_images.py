@@ -38,7 +38,17 @@ button_images = {
         "base": "clear.png",
         "hover": "clear_hover.png",
         "pressed": "clear_pressed.png"
-    }
+    },
+    "Export User": {
+        "base": "export.png",
+        "hover": "export_hover.png",
+        "pressed": "export_pressed.png"
+    },
+    "Import User": {
+        "base": "import.png",
+        "hover": "import_hover.png",
+        "pressed": "import_pressed.png"
+    },
 }
 
 label_images = {
