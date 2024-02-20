@@ -69,9 +69,12 @@ class MainWindow(CommonFunctions):
                                    highlightbackground='#A87C7C',  # entry field color when not inm focus
                                    highlightcolor='#503C3C',  # entry field when in focus
                                    highlightthickness=5)
-        website_button = CustomButton(self.window, width=122, height=40, button_name="Search",
-                                      command=lambda: self.data_handler.find_password_db(self.user_id,
-                                                                                         self.website_entry))
+        website_button = CustomButton(self.window,
+                                      width=122,
+                                      height=40,
+                                      button_name="Search",
+                                      command=lambda: self.data_handler.find_password_db(user_id=self.user_id,
+                                                                                         website_entry=self.website_entry,))
         self.display_label(labelname="website", row=2, col=0)
         self.website_entry.grid(row=2, column=1, padx=(5,0), columnspan=2)
         website_button.grid(row=5, column=2)
@@ -98,12 +101,18 @@ class MainWindow(CommonFunctions):
                                     highlightcolor='#503C3C',  # entry field when in focus
                                     highlightthickness=5
                                     )
-        self.generate_password_button = CustomButton(self.window, width=122, height=40, button_name="Generate Password", command=self.generate_password)
+        self.generate_password_button = CustomButton(self.window,
+                                                     width=122,
+                                                     height=40,
+                                                     button_name="Generate Password",
+                                                     command=self.generate_password)
         self.display_label(labelname="password", row=4, col=0)
         self.password_entry.grid(row=4, column=1, padx=(5,0), columnspan=2)
         self.generate_password_button.grid(row=5, column=1, padx=(25,0), pady=5)
         # creating add button to save the password
-        self.add_to_data_button = CustomButton(self.window, width=122, height=40, button_name="Add",
+        self.add_to_data_button = CustomButton(self.window,
+                                               width=122, height=40,
+                                               button_name="Add",
                                                command=lambda: self.pre_save_to_db(user_id=self.user_id,
                                                                                    website_entry=self.website_entry,
                                                                                    email_user_entry=self.email_user_entry,
@@ -111,11 +120,23 @@ class MainWindow(CommonFunctions):
                                                )
         self.add_to_data_button.grid(row=5, column=0)
         # creating load button to load a JSON file
-        self.load_button = CustomButton(self.window, width=122, height=40, button_name="Load JSON", command=lambda: self.data_handler.load_json_concurrently_wrapper(self.user_id))
+        self.load_button = CustomButton(self.window,
+                                        width=122,
+                                        height=40,
+                                        button_name="Load JSON",
+                                        command=lambda: self.data_handler.load_json_concurrently_wrapper(self.user_id))
         self.load_button.grid(row=6, column=0)
-        self.clear_button = CustomButton(self.window, width=122, height=40, button_name="Clear", command=self.clear_entry)
+        self.clear_button = CustomButton(self.window,
+                                         width=122,
+                                         height=40,
+                                         button_name="Clear",
+                                         command=self.clear_entry)
         self.clear_button.grid(row=6, column=1, padx=(25,0), pady=5)
-        self.logout_button = CustomButton(self.window, width=122, height=40, button_name="Logout", command=self.logout)
+        self.logout_button = CustomButton(self.window,
+                                          width=122,
+                                          height=40,
+                                          button_name="Logout",
+                                          command=self.logout)
         self.logout_button.grid(row=6, column=2)
         self.window.update_idletasks()  # Update the window to calculate widget sizes
         window_width = self.window.winfo_reqwidth()
@@ -139,30 +160,7 @@ class MainWindow(CommonFunctions):
         self.password_entry.delete(0, END)
         self.password_entry.insert(0, string=password)
 
-        print(f"Your generated password is: {password}")
-
-    def find_password(self):
-        website = self.website_entry.get()
-        try:
-            with open('save_passwords.json.enc', mode='rb') as save_file:
-                # Decrypt the file
-                encrypted_data = save_file.read()
-                decrypted_data = self.encryption_manager.decrypt(encrypted_data)
-                # Read old data and save to variable
-                data = json.loads(decrypted_data)
-        except (FileNotFoundError, json.JSONDecodeError):
-            with open('save_passwords.json.enc', mode='w') as save_file:
-                # create file if not existing
-                data = {}
-        else:
-            if website in data:
-                email = data[website]['username']
-                password = data[website]['password']
-                messagebox.showinfo(title=f'Login Information for: {website}',
-                                    message=f'Username:{email}\n Password:{password}')
-            else:
-                messagebox.showinfo(title=f'Website Not Found',
-                                    message=f'Sorry, No Entry Found')
+        #print(f"Your generated password is: {password}")
 
     def display_selected_website(self, *args):
         selected_website = self.website_dropdown.get()

@@ -4,6 +4,7 @@ from os.path import join
 from CustomGUIFunctions import CommonFunctions
 from CustomButton import CustomButton
 from MainWindow import MainWindow
+from UserManager import UserManager
 from button_images import label_images
 
 class LoginWindow(CommonFunctions):
@@ -12,6 +13,7 @@ class LoginWindow(CommonFunctions):
         self.window = window
         self.window.resizable(0, 0)
         self.db_handler = db_handler
+        self.user_manager = UserManager(self.db_handler, self.window)
         self.user_id = None
         self.login_window = None
         self.username_entry = None
@@ -67,11 +69,11 @@ class LoginWindow(CommonFunctions):
         CustomButton(self.window,
                      width=122, height=40,
                      button_name="Export User",
-                     command=self.db_handler.create_first_user).grid(row=3,
-                                                                     column=1,
-                                                                     padx=0,
-                                                                     pady=10
-                                                                     )
+                     command=self.user_manager.get_username).grid(row=3,
+                                                                  column=1,
+                                                                  padx=0,
+                                                                  pady=10
+                                                                  )
 
         # Calculate and set the window size based on widget sizes
         self.window.update_idletasks()  # Update the window to calculate widget sizes

@@ -33,7 +33,9 @@ class DatabaseDataHandler(CommonFunctions):
                 else:
                     return {}
         except sqlite3.Error as error:
-            messagebox.showinfo(title='🛑 Error 🛑', message=f"Sorry Some Error Happened: {error}")
+            messagebox.showinfo(
+                title='🛑 Error 🛑',
+                message=f"Sorry Some Error Happened: {error}")
             return {}
 
     # Save data to database has GUI controls
@@ -43,7 +45,9 @@ class DatabaseDataHandler(CommonFunctions):
             username = email_user_entry.get()
             password = password_entry.get()
             if len(website) == 0 or len(username) == 0 or len(password) == 0:
-                messagebox.showinfo(title='⚠️ Notice ⚠️', message='Please do not leave any fields blank!')
+                messagebox.showinfo(
+                    title='⚠️ Notice ⚠️',
+                    message='Please do not leave any fields blank!')
             else:
                 message = f"These are the details you'd like to save\nUsername: {username}\nPassword: {password}"
                 ok_to_save = messagebox.askyesno(website, message)
@@ -60,7 +64,9 @@ class DatabaseDataHandler(CommonFunctions):
                                 try:
                                     existing_data_decrypted = self.encryption_manager.decrypt(existing_data)
                                 except Exception as decryption_error:
-                                    messagebox.showinfo(title='🛑 Warning 🛑', message=f"Decryption error: {decryption_error}")
+                                    messagebox.showinfo(
+                                        title='🛑 Warning 🛑',
+                                        message=f"Decryption error: {decryption_error}")
                                     return
 
                                 # Update the existing data with new data
@@ -78,7 +84,9 @@ class DatabaseDataHandler(CommonFunctions):
                                 cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
                                                (updated_data_encrypted, user_id))
                                 conn.commit()
-                                messagebox.showinfo(title='✅ Success! ✅', message='Your New Entry Was Saved!')
+                                messagebox.showinfo(
+                                    title='✅ Success! ✅',
+                                    message='Your New Entry Was Saved!')
                                 website_entry.delete(0, 'end')
                                 email_user_entry.delete(0, 'end')
                                 password_entry.delete(0, 'end')
@@ -97,13 +105,17 @@ class DatabaseDataHandler(CommonFunctions):
                                                (user_id, new_data_encrypted))
                                 conn.commit()
                                 self.update_dropdown(user_id)
-                                messagebox.showinfo(title='✅ Success! ✅', message='Your New Entry Was Saved!')
+                                messagebox.showinfo(
+                                    title='✅ Success! ✅',
+                                    message='Your New Entry Was Saved!')
                                 website_entry.delete(0, 'end')
                                 email_user_entry.delete(0, 'end')
                                 password_entry.delete(0, 'end')
 
                     except sqlite3.Error as error:
-                        messagebox.showinfo(title='🛑 Warning🛑', message=f"Sorry Some Error Happened: {error}")
+                        messagebox.showinfo(
+                            title='🛑 Warning🛑',
+                            message=f"Sorry Some Error Happened: {error}")
         # We have to catch a NoneType Exception for the first entry the entry is added fine but this exception happens
         except Exception as error:
             pass
@@ -124,17 +136,22 @@ class DatabaseDataHandler(CommonFunctions):
                 # If no data exists, set data to an empty dictionary
                 data = {}
         except (FileNotFoundError, json.JSONDecodeError) as error:
-            messagebox.showinfo(title='Warning', message=f"Sorry Some Error Happened: {error}")
+            messagebox.showinfo(
+                title='Warning',
+                message=f"Sorry Some Error Happened: {error}")
             # Set data to an empty dictionary
             data = {}
         # Rest of the function remains the same
         if website in data:
             email = data[website]['username']
             password = data[website]['password']
-            messagebox.showinfo(title=f'Login',
-                            message=f'Website:{website}\nUsername: {email}\nPassword: {password}')
+            messagebox.showinfo(
+                title=f'Login',
+                message=f'Website:{website}\nUsername: {email}\nPassword: {password}')
         else:
-            messagebox.showinfo(title=f'⚠️ Website Not Found ⚠️', message=f'Sorry, No Entry Found')
+            messagebox.showinfo(
+                title=f'⚠️ Website Not Found ⚠️',
+                message=f'Sorry, No Entry Found')
 
     # --- Drop Down Data Function Database --- #
     def update_dropdown(self, user_id):
@@ -152,16 +169,16 @@ class DatabaseDataHandler(CommonFunctions):
                 else:
                     data = {}
             except (FileNotFoundError, json.JSONDecodeError) as error:
-                messagebox.showinfo(title='Warning', message=f"Sorry Some Error Happened: {error}")
-                with open('save_passwords.json.enc', mode='w') as save_file:
-                    # create file if not existing
-                    data = {}
+                messagebox.showinfo(
+                    title='Warning',
+                    message=f"Sorry Some Error Happened: {error}")
             finally:
                 website_list = list(data.keys())
+
         except (FileNotFoundError, json.JSONDecodeError) as error:
-            messagebox.showinfo(title='🛑 Warning 🛑', message=f"Sorry Some Error Happened: {error}")
-            with open('save_passwords.json.enc', mode='w') as save_file:
-                data = {}
+            messagebox.showinfo(
+                title='🛑 Warning 🛑',
+                message=f"Sorry Some Error Happened: {error}")
 
         website_list = list(data.keys())
         self.website_dropdown['values'] = website_list
