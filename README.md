@@ -16,11 +16,19 @@ CLASS INHERITANCE - Only used inherit properties from other classes but this tim
 
 THREADING - Wrapped JSON loader to make sure we didn't have a concurrency error between Tk() window and filedialog opening to load in a file. 
 
+Encryption - I learned a lot about salt, and other encryption protocols mentioned above, the final program can have multiple users up to the limits of an SQLite database, we keep user login and a hash of their password in the user's table using bcrypt, for the stored data in the database for each user we encrypt a json file that stores their encrypted data, the data is encrypted using Fernet. What made this unique was learning about bytes and strings. To make sure the data was handled properly when being created/updated. When it came to user exports we allows the userto create a passphrase to allow them to import their user on a system migration keeping their stored data. 
+
 
 
 The original app from the Udemy course was a simple 117-line password generator and storing app it only generated a random password and saved it to a readable JSON file that anyone could read in plain English and worse it was in JSON format making it easier for an app to read the data. I took it upon myself to make this a potential app for a personal storage app of one's passwords. In a growing world of apps we use it's hard to remember every password and every website we join. So this helps keep it all stored securely in one spot. I DO NOT recommend I will repeat I DO NOT recommend using this app  for storing and saving your passwords unless you are savvy with python and computers. This app now has a database that can have multiple users using the app each with their own encrypted store of passwords. Like a family all using one computer... Like it's still the early 2000's lol... Let's be real this was for my own knowledge of objects, classes, databases and logins not using a web app. 
 
 #### UPDATES Below ####
+
+2024/02/20 - The export function working 100% for users with data and users with no data, we started working on the import user function
+
+2024/02/19 - Finally found the JSON bytes error in the data['encrypted_data'] in the dict was already in bytes format, had to catch this instance and convert it to string and add it back to the dict for exporting
+
+2024/02/16 - Added Import/Export Buttons to Login Window, and created user_export function - Datatype Error: Bytes Not JSON serializable, updated graphics of all buttons, now looks like clicked when pushed.
 
 2024/02/14 - Functions Working Except for Dropdown Get Data function, Fixed the Crash Issue with Tkinter and Loading JSON I had multiple Instances of Tkinter running, I fixed that the app uses one Tk() object in the main.py and passes it to login window once the login is the success it creates the mainwindow. -Fixes needed: Dropdown doesn't get login data for pop up, displays n/a plus no runtime errors or compiler. JSON file loads clean but we get an error in runtime after it loads, we need to catch the exception to check it we also get the same error when adding a new entry manually to the database, however the data is entered. 
 
