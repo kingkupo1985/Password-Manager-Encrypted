@@ -1,5 +1,11 @@
-from cryptography.fernet import Fernet
 import keyring
+import os
+import base64
+from cryptography.fernet import Fernet
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
 
 class EncryptionManager:
     def __init__(self, service_name="password_manager", account_name="user_key"):
@@ -36,3 +42,24 @@ class EncryptionManager:
         cipher = Fernet(self.key)
         decrypted_data = cipher.decrypt(encrypted_data).decode()
         return decrypted_data
+
+    def generate_fernet_key(self, passphrase):
+        # Convert passphrase to bytes
+        passphrase_bytes = passphrase.encode()
+
+        # Generate a salt (random bytes)
+        salt = os.urandom(16)
+
+        # Derive a key using PBKDF2
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        key = kdf.derive(passphrase_bytes)
+
+        # Create a Fernet key from the derived key
+        fernet_key = base64.urlsafe_b64encode(key)
+        return fernet_key, salt
