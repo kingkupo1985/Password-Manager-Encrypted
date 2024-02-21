@@ -15,6 +15,43 @@ class UserManager:
         self.window = window
         self.filepath = None
 
+    def import_user(self):
+        # Prompt the user to select the import file
+        import_file = filedialog.askopenfilename(
+            title="Select File to Import",
+            filetypes=[("ENC Files", "*.enc")]
+        )
+        if not import_file:
+            return
+
+        # Prompt the user for the passphrase
+        passphrase = askstring("Enter Passphrase", "Enter the passphrase for importing user data:")
+        if not passphrase:
+            return
+
+        # Read the encrypted data from the file
+        with open(import_file, "rb") as file:
+            encrypted_data = file.read()
+
+        # Decrypt the data using the passphrase
+        fernet_key, _ = self.encryption_manager.generate_fernet_key(passphrase)
+        decrypted_data = self.decrypt_data(encrypted_data, fernet_key)
+
+        # Import the decrypted data into the database
+        if decrypted_data:
+            try:
+                # Decode the decrypted data from bytes to JSON
+                decoded_data = decrypted_data.decode("utf-8")
+                user_data = json.loads(decoded_data)
+
+                # Import the user data into the database
+                # Implement this based on the structure of user_data
+                # For example:
+                self.import_user_data(user_data)
+                messagebox.showinfo("Import Successful", "User data imported successfully!")
+            except Exception as e:
+                messagebox.showerror("Error", f"An error occurred during import: {e}")
+
     def export_user(self, user_id, export_path, passphrase):
         # Gather user data
         user_data = self.get_user_data(user_id)
