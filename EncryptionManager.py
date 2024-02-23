@@ -19,11 +19,14 @@ class EncryptionManager:
         keyring.set_password(self.service_name, self.account_name, key.decode())
         return key
 
-    def load_key(self):
+    def load_key(self, key_ring=None):
         try:
-            key = keyring.get_password(self.service_name, self.account_name)
-            if key is None:
-                key = self.generate_key()
+            if key_ring is not None:
+                key = key_ring
+            else:
+                key = keyring.get_password(self.service_name, self.account_name)
+                if key is None:
+                    key = self.generate_key()
         except Exception as e:
             print(f"Error loading key: {e}")
             key = self.generate_key()

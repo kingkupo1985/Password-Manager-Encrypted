@@ -1,4 +1,4 @@
-import json, sqlite3, base64, bcrypt, os
+import json, sqlite3, base64, os, ast
 from cryptography.fernet import Fernet
 from tkinter.simpledialog import askstring
 from tkinter import messagebox, filedialog
@@ -11,6 +11,7 @@ class UserManager:
         self.data_handler = DatabaseDataHandler(db_handler, None, None)
         self.encryption_manager = EncryptionManager()
         self.window = window
+        self.db_handler.check_and_create_databases()
         self.filepath = None
 
     def import_user(self):
@@ -22,6 +23,7 @@ class UserManager:
                 lines = file.readlines()
                 encrypted_data = lines[0].strip()
                 salt = lines[1].strip()
+
             # Decode encypted_data bytes to base64
             encoded_encrypted_data = base64.b64encode(encrypted_data).decode('utf-8')
 
@@ -30,33 +32,44 @@ class UserManager:
 
             # Decrypt the data using the derived key
             decrypted_data_dict = self.decrypt_data(encoded_encrypted_data, key)
-            # Loop through decrypted data to update user passwords
-            for key, value in decrypted_data_dict.items():
-                print(f"line 36: {key} {value}")
-                # connect to the database
-                with sqlite3.connect(self.db_handler.db_name) as conn:
-                    cursor = conn.cursor()
+            # Convert Encrypted Data stored as string back to byte literal
+            if decrypted_data_dict['encrypted_data'] == "":
+                pass
+            else:
+                decrypted_data_dict['encrypted_data'] = ast.literal_eval(decrypted_data_dict['encrypted_data'])
 
-                # Check if the user exists
-                user_id = self.db_handler.get_user_id(username)
-                if user_id is not None:
-                    # Update the existing user's password
-                    cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
-                                   (base64.b64encode(
-                                       json.dumps({key: {'username': username, 'password': password}}).encode(
-                                           'utf-8')), user_id))
-                    conn.commit()
-                else:
-                    # Insert a new user and their password
-                    cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)",
-                                   (username, encrypted_password))
-                    user_id = cursor.lastrowid
-                    cursor.execute("INSERT INTO passwords (user_id, encrypt_dictionary) VALUES (?, ?)",
-                                   (user_id, base64.b64encode(
-                                       json.dumps({key: {'username': username, 'password': password}}).encode(
-                                           'utf-8'))))
-                    conn.commit()
-            return True
+            # Let's import the user to  the DB
+            username = decrypted_data_dict['username']
+            password = decrypted_data_dict['password_hash']
+            encrypted_data = decrypted_data_dict['encrypted_data']
+            keyring_key = self.encryption_manager.load_key(decrypted_data_dict['keyring_key'])
+            print(f"Importing user:{username}\nPassword:{password}\nData:{encrypted_data}\nKeyring:{keyring_key}\nLets make the DB functions!")
+
+            # Let's Connect to the Database
+            conn = sqlite3.connect(self.db_handler.db_name)
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM users WHERE username=?", (username,))
+            existing_user = cursor.fetchone()
+
+            # Check for user
+            if existing_user:
+                # Step 2: Update the password_hash if the user exists
+                cursor.execute("UPDATE users SET password_hash=? WHERE username=?", (password, username))
+                user_id = existing_user[0]
+            else:
+                # Step 3: Insert a new user if it doesn't exist
+                cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, password))
+                user_id = cursor.lastrowid
+
+            # Step 4: Insert encrypted data into passwords table
+            cursor.execute("INSERT INTO passwords (user_id, encrypt_dictionary) VALUES (?, ?)",
+                           (user_id, encrypted_data))
+
+            # Commit changes and close connection
+            conn.commit()
+            conn.close()
+            print(f"User: {username} was imported successfully")
+
         except Exception as e:
             print(f"Error importing user: {e}")
             return False
@@ -70,23 +83,26 @@ class UserManager:
         key = self.encryption_manager.generate_fernet_key(passphrase, salt)
         # Let's export the data
         if user_data:
+            # We need to store the user_data['encrypted_data'] as a string not bytes but we need the bytes later
+            user_data['encrypted_data'] = str(user_data['encrypted_data'])
+            print(f"line 90: user_data:{user_data}")
             try:
                 # Handle the case when 'encrypted_data' is empty
                 if user_data['encrypted_data'] == "":
                     # Serialize the entire dictionary to JSON
                     json_data = json.dumps(user_data)
                 else:
-                    # Handle the 'encrypted_data' separately and encode it to base64
-                    user_data['encrypted_data'] = base64.b64encode(user_data['encrypted_data']).decode('utf-8')
+                    # Handle the 'encrypted_data' separately and encode it to base64 (old method to handle the encrypted_data bytes
+                    #user_data['encrypted_data'] = base64.b64encode(user_data['encrypted_data']).decode('utf-8')
                     # Serialize the dictionary to JSON
                     json_data = json.dumps(user_data)
 
                 # Encrypt the JSON data using the derived key
                 encrypted_user_export = self.encrypt_data(json_data, key)
-                print(f"Line 104: Export Key:{key}")
                 # Write the encrypted data and salt to the export file
                 with open(export_path, 'wb') as file:
                     file.write(encrypted_user_export + b'\n' + salt)
+                    print(file)
                 return True
             except Exception as e:
                 messagebox.showinfo("Error Happened", f"Error: {e}")
@@ -138,19 +154,15 @@ class UserManager:
             # Decode the decrypted bytes into a string
             decrypted_data_str = decrypted_bytes.decode('utf-8')
 
-            # Log the decrypted string for inspection
-            print("Decrypted data string:", decrypted_data_str)
-
             # Attempt to parse the decrypted string as JSON
             decrypted_data_dict = json.loads(decrypted_data_str)
-            print(f"Line 157| decrypted_data_dict type: {type(decrypted_data_dict)}")
 
             # Check if the parsed JSON is a dictionary
             if isinstance(decrypted_data_dict, dict):
-                print("Decrypted data is a dictionary")
+                # print("Decrypted data is a dictionary")
                 return decrypted_data_dict
             else:
-                print("Decrypted data is not a dictionary")
+                # print("Decrypted data is not a dictionary")
                 return None
         except json.JSONDecodeError as json_error:
             print("JSON decoding error:", json_error)

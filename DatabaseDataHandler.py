@@ -86,6 +86,7 @@ class DatabaseDataHandler(CommonFunctions):
                                 cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
                                                (updated_data_encrypted, user_id))
                                 conn.commit()
+                                print(f"updated_data_encrypted: {updated_data_encrypted}")
                                 messagebox.showinfo(
                                     title='✅ Success! ✅',
                                     message='Your New Entry Was Saved!')
