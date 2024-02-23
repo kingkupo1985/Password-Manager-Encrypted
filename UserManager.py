@@ -11,6 +11,7 @@ class UserManager:
         self.data_handler = DatabaseDataHandler(db_handler, None, None)
         self.encryption_manager = EncryptionManager()
         self.window = window
+        # Must Initialize DB on first run of app or import causes a crash
         self.db_handler.check_and_create_databases()
         self.filepath = None
 
@@ -223,3 +224,5 @@ class UserManager:
             return filepath
         else:
             return None
+
+# 989 Lines of code in total

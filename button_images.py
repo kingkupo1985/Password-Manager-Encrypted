@@ -1,5 +1,3 @@
-import os, os.path
-
 button_images = {
     "Add": {
         "base": "add.png",

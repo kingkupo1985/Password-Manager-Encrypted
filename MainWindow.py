@@ -16,8 +16,8 @@ class MainWindow(CommonFunctions):
         super().__init__()
         self.db_handler = db_handler
         self.window = window
+        # Prevent user Resizing Window
         self.window.resizable(0, 0)
-        self.login_window = window
         self.lock_img = None
         self.website_entry = None
         self.website_dropdown = None
@@ -31,7 +31,7 @@ class MainWindow(CommonFunctions):
         self.data_handler = DatabaseDataHandler(self.db_handler, self.user_id, self.website_dropdown)
         self.window.title("Password Manager")
         self.window.config(padx=20, pady=20, bg='white')
-        # Prevent window from resizing based on its contents
+        # Allow window resizing based on its contents
         self.window.grid_columnconfigure(0, weight=1)  # Make the column expandable
         self.window.grid_rowconfigure(6, weight=1)  # Make the last row expandable
         style = ttk.Style()
