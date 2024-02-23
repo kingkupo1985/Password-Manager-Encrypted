@@ -5,6 +5,8 @@ from tkinter import filedialog, messagebox
 from CustomGUIFunctions import CommonFunctions
 from EncryptionManager import EncryptionManager
 
+# TODO Create merge_user_data function for importing user in UserManager.py I think i will handle this in the UserManager.py
+
 class DatabaseDataHandler(CommonFunctions):
     def __init__(self, db_handler, user_id, website_dropdown):
         super().__init__()

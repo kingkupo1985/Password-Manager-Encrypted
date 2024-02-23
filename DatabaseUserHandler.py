@@ -96,6 +96,31 @@ class DatabaseHandler(CommonFunctions):
             else:
                 messagebox.showinfo(title='⚠️ Notice ⚠️', message='Passwords did not match. Please try again.')
 
+    #  Create User from Import UserManager.py
+
+    def import_user(self, username, password_hash):
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            try:
+                cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)",
+                               (username, password_hash))
+                conn.commit()
+                messagebox.showinfo(title='✅ Success ✅', message='User Imported successfully!')
+                self.user_id = cursor.lastrowid
+                # login_prompt()
+                cursor.execute("SELECT id, password_hash FROM users WHERE username = ?", (username,))
+                result = cursor.fetchone()
+                if result:
+                    password = askstring("Password", "What is your user password?")
+                    # Extract the user_id and hashed password from the result
+                    user_id, hashed_password = result
+                    # Verify the password using bcrypt
+                    if bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8')):
+                        # Password is correct, return the user_id
+                        return user_id
+            except sqlite3.IntegrityError:
+                messagebox.showinfo(title='⚠️ Notice ⚠️', message='Username already exists!')
+
     # Verify user exists in database ad return user ID
     def get_user_id(self, username, password):
         with sqlite3.connect(self.db_name) as conn:

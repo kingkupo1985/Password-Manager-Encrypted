@@ -43,13 +43,12 @@ class EncryptionManager:
         decrypted_data = cipher.decrypt(encrypted_data).decode()
         return decrypted_data
 
-    def generate_fernet_key(self, passphrase):
+    def generate_fernet_key(self, passphrase, salt=None):
+        if salt is None:
+            salt = os.urandom(16)
         # Convert passphrase to bytes
         passphrase_bytes = passphrase.encode()
-
         # Generate a salt (random bytes)
-        salt = os.urandom(16)
-
         # Derive a key using PBKDF2
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
@@ -62,4 +61,4 @@ class EncryptionManager:
 
         # Create a Fernet key from the derived key
         fernet_key = base64.urlsafe_b64encode(key)
-        return fernet_key, salt
+        return fernet_key

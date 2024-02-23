@@ -1,6 +1,4 @@
-import json
-import sqlite3
-import base64
+import json, sqlite3, base64, bcrypt, os
 from cryptography.fernet import Fernet
 from tkinter.simpledialog import askstring
 from tkinter import messagebox, filedialog
@@ -16,74 +14,82 @@ class UserManager:
         self.filepath = None
 
     def import_user(self):
-        # Prompt the user to select the import file
-        import_file = filedialog.askopenfilename(
-            title="Select File to Import",
-            filetypes=[("ENC Files", "*.enc")]
-        )
-        if not import_file:
-            return
+        self.filepath = self.open_file_path()
+        passphrase = askstring("User Import", "What is your passphrase you created when exporting your user data:?")
+        try:
+            # Read the encrypted data and salt from the import file
+            with open(self.filepath, 'rb') as file:
+                lines = file.readlines()
+                encrypted_data = lines[0].strip()
+                salt = lines[1].strip()
+            # Decode encypted_data bytes to base64
+            encoded_encrypted_data = base64.b64encode(encrypted_data).decode('utf-8')
 
-        # Prompt the user for the passphrase
-        passphrase = askstring("Enter Passphrase", "Enter the passphrase for importing user data:")
-        if not passphrase:
-            return
+            # Derive the key from the passphrase and the salt
+            key = self.encryption_manager.generate_fernet_key(passphrase, salt)
 
-        # Read the encrypted data from the file
-        with open(import_file, "rb") as file:
-            encrypted_data = file.read()
+            # Decrypt the data using the derived key
+            decrypted_data_dict = self.decrypt_data(encoded_encrypted_data, key)
+            # Loop through decrypted data to update user passwords
+            for key, value in decrypted_data_dict.items():
+                print(f"line 36: {key} {value}")
+                # connect to the database
+                with sqlite3.connect(self.db_handler.db_name) as conn:
+                    cursor = conn.cursor()
 
-        # Decrypt the data using the passphrase
-        fernet_key, _ = self.encryption_manager.generate_fernet_key(passphrase)
-        decrypted_data = self.decrypt_data(encrypted_data, fernet_key)
-
-        # Import the decrypted data into the database
-        if decrypted_data:
-            try:
-                # Decode the decrypted data from bytes to JSON
-                decoded_data = decrypted_data.decode("utf-8")
-                user_data = json.loads(decoded_data)
-
-                # Import the user data into the database
-                # Implement this based on the structure of user_data
-                # For example:
-                self.import_user_data(user_data)
-                messagebox.showinfo("Import Successful", "User data imported successfully!")
-            except Exception as e:
-                messagebox.showerror("Error", f"An error occurred during import: {e}")
+                # Check if the user exists
+                user_id = self.db_handler.get_user_id(username)
+                if user_id is not None:
+                    # Update the existing user's password
+                    cursor.execute("UPDATE passwords SET encrypt_dictionary = ? WHERE user_id = ?",
+                                   (base64.b64encode(
+                                       json.dumps({key: {'username': username, 'password': password}}).encode(
+                                           'utf-8')), user_id))
+                    conn.commit()
+                else:
+                    # Insert a new user and their password
+                    cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)",
+                                   (username, encrypted_password))
+                    user_id = cursor.lastrowid
+                    cursor.execute("INSERT INTO passwords (user_id, encrypt_dictionary) VALUES (?, ?)",
+                                   (user_id, base64.b64encode(
+                                       json.dumps({key: {'username': username, 'password': password}}).encode(
+                                           'utf-8'))))
+                    conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error importing user: {e}")
+            return False
 
     def export_user(self, user_id, export_path, passphrase):
         # Gather user data
         user_data = self.get_user_data(user_id)
         # generate key for exporting/importing user data
-        fernet_key, salt = self.encryption_manager.generate_fernet_key(passphrase)
-
+        salt = os.urandom(16)
+        # Derive the key from the passphrase and the salt
+        key = self.encryption_manager.generate_fernet_key(passphrase, salt)
         # Let's export the data
         if user_data:
-            # Encode the bytes object to base64
-            print(f"Userdata['encrypted_data']: {user_data['encrypted_data']}")
-            if user_data['encrypted_data'] == "":
-                try:
-                    encrypted_data = self.encrypt_data(user_data, fernet_key)
-                    with open(export_path, 'wb') as file:
-                        file.write(encrypted_data)
-                    return True
-                except Exception as e:
-                    messagebox.showinfo("Error Happened", "Line 40: Error: {e}")
+            try:
+                # Handle the case when 'encrypted_data' is empty
+                if user_data['encrypted_data'] == "":
+                    # Serialize the entire dictionary to JSON
+                    json_data = json.dumps(user_data)
+                else:
+                    # Handle the 'encrypted_data' separately and encode it to base64
+                    user_data['encrypted_data'] = base64.b64encode(user_data['encrypted_data']).decode('utf-8')
+                    # Serialize the dictionary to JSON
+                    json_data = json.dumps(user_data)
 
-            else:
-                # encode to base 64
-                encoded_data = base64.b64encode(user_data['encrypted_data']).decode('utf-8')
-                # Update the dictionary with the encoded data
-                user_data['encrypted_data'] = encoded_data
-                try:
-                    # Excrypt the data!
-                    encrypted_data = self.encrypt_data(user_data, fernet_key)
-                    with open(export_path, 'wb') as file:
-                        file.write(encrypted_data)
-                    return True
-                except Exception as e:
-                    messagebox.showinfo("Error Happened", "Line 40: Error: {e}")
+                # Encrypt the JSON data using the derived key
+                encrypted_user_export = self.encrypt_data(json_data, key)
+                print(f"Line 104: Export Key:{key}")
+                # Write the encrypted data and salt to the export file
+                with open(export_path, 'wb') as file:
+                    file.write(encrypted_user_export + b'\n' + salt)
+                return True
+            except Exception as e:
+                messagebox.showinfo("Error Happened", f"Error: {e}")
 
         return False
 
@@ -113,10 +119,45 @@ class UserManager:
         return user_data
 
     def encrypt_data(self, data, key):
-        json_data = json.dumps(data)
         fernet = Fernet(key)
-        encrypted_bytes = fernet.encrypt(json_data.encode())
+        encrypted_bytes = fernet.encrypt(data.encode())
         return encrypted_bytes
+
+    def decrypt_data(self, data, key):
+        try:
+            # Decode Base64-encoded string to binary
+            decoded_data = base64.b64decode(data)
+            if decoded_data is None:
+                print("Decoded data is None")
+                return None
+
+            # Decrypt the binary data using the encryption key
+            fernet = Fernet(key)
+            decrypted_bytes = fernet.decrypt(decoded_data)
+
+            # Decode the decrypted bytes into a string
+            decrypted_data_str = decrypted_bytes.decode('utf-8')
+
+            # Log the decrypted string for inspection
+            print("Decrypted data string:", decrypted_data_str)
+
+            # Attempt to parse the decrypted string as JSON
+            decrypted_data_dict = json.loads(decrypted_data_str)
+            print(f"Line 157| decrypted_data_dict type: {type(decrypted_data_dict)}")
+
+            # Check if the parsed JSON is a dictionary
+            if isinstance(decrypted_data_dict, dict):
+                print("Decrypted data is a dictionary")
+                return decrypted_data_dict
+            else:
+                print("Decrypted data is not a dictionary")
+                return None
+        except json.JSONDecodeError as json_error:
+            print("JSON decoding error:", json_error)
+            return None
+        except Exception as e:
+            print("Error decrypting data:", e)
+            return None
 
     def get_username(self):
         username = askstring("Username Export", "Enter the username you want to export: ")
@@ -149,6 +190,20 @@ class UserManager:
             filetypes=[("ENC Files", "*.enc")],
             initialfile=f"export_user_{username}.enc",
             initialdir= "/",
+        )
+        if file:
+            filepath = file.name
+            file.close()
+            return filepath
+        else:
+            return None
+
+    def open_file_path(self):
+        file = filedialog.askopenfile(
+            title="Export User Save File Location",
+            defaultextension=".enc",
+            filetypes=[("ENC Files", "*.enc")],
+            initialdir="/",
         )
         if file:
             filepath = file.name

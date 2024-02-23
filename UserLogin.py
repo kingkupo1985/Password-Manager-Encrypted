@@ -61,7 +61,7 @@ class LoginWindow(CommonFunctions):
                      width=122,
                      height=40,
                      button_name="Import User",
-                     command=self.on_login).grid(row=3,
+                     command=self.user_manager.import_user).grid(row=3,
                                                  column=0,
                                                  padx=(50, 0),
                                                  pady=10
