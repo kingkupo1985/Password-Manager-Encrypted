@@ -24,8 +24,11 @@ BYTES - I learned how to store bytes ad a string and retereve those bytes to be 
 
 STORING DATA SECURELY - User data was encrypted using a passphrase that users create, the passphrase is salted and the encryption key is derived from the salted passphrase this passphrase is required to import the user data for Station Migration.
 
+CUSTOM GUI GRAPHICS - I made custom graphics for hover, pressed, and non focus states on buttons 3 images per button in  canva, plus I made custom label graphics for the entry fields
+
 The original app from the Udemy course was a simple 117-line password generator and storing app it only generated a random password and saved it to a readable JSON file that anyone could read in plain English and worse it was in JSON format making it easier for an app to read the data. I took it upon myself to make this a potential app for a personal storage app of one's passwords. In a growing world of apps we use it's hard to remember every password and every website we join. So this helps keep it all stored securely in one spot. I DO NOT recommend I will repeat I DO NOT recommend using this app  for storing and saving your passwords unless you are savvy with python and computers. This app now has a database that can have multiple users using the app each with their own encrypted store of passwords. Like a family all using one computer... Like it's still the early 2000's lol... Let's be real this was for my own knowledge of objects, classes, databases and logins not using a web app. 
-Final App: 989 lines
+Final App: 989 lines 
+(Main2.py not counted as that was the app  before import/export and single file.py)
 
 #### UPDATES Below ####
 
