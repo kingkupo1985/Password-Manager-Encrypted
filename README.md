@@ -34,6 +34,8 @@ Final App: 989 lines
 
 2024/02/22 - All Functions are Working: Import/Export User, Save Encrypted Data, Generate Password, Import JSON, Clear
 
+2024/02/21 - Learned How to Handle Bytes & Encrypted Data for Import/Export to work properly export function updated import function created
+
 2024/02/20 - The export function working 100% for users with data and users with no data, we started working on the import user function
 
 2024/02/19 - Finally found the JSON bytes error in the data['encrypted_data'] in the dict was already in bytes format, had to catch this instance and convert it to string and add it back to the dict for exporting
